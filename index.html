@@ -22,11 +22,12 @@
     
     #loginScreen, #appScreen, #reportScreen { background: var(--card-bg); padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
     .input-group { margin-bottom: 15px; }
-    label { display: block; margin-bottom: 5px; font-weight: bold; }
-    input[type="text"], input[type="password"] { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 16px; outline: none; }
+    label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; }
+    input[type="text"], input[type="password"] { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 15px; outline: none; }
     button { width: 100%; padding: 12px; background: var(--primary-color); color: #fff; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
     
     .btn-whatsapp { background-color: var(--whatsapp-color); color: #fff; }
+    .btn-copy { background-color: #0dcaf0; color: #212529; }
     .btn-back { background-color: #6c757d; }
 
     .search-box { position: relative; margin-bottom: 15px; }
@@ -40,7 +41,10 @@
     .grade-title { font-size: 14px; font-weight: 500; }
     .grade-val { font-weight: bold; font-size: 15px; color: #2c3e50; }
     .no-grade { color: #d9534f; font-weight: normal; }
-    .link-btn { display: block; text-align: center; margin-top: 15px; text-decoration: none; background-color: #0d6efd; color: #fff; padding: 12px; border-radius: 8px; font-weight: bold; }
+    
+    .absence-btn { display: block; text-align: center; margin: 15px 0; text-decoration: none; background-color: #d9534f; color: #fff; padding: 12px; border-radius: 8px; font-weight: bold; }
+    .whatsapp-box { background: #f8f9fa; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-top: 15px; }
+    .signature { text-align: center; font-weight: bold; margin-top: 15px; padding-top: 10px; border-top: 1px dashed #ccc; color: #0b5ed7; }
   </style>
 </head>
 <body>
@@ -51,6 +55,7 @@
     <div class="status-bar" id="syncStatus">جاري التحقق من البيانات...</div>
   </div>
 
+  <!-- تسجيل الدخول -->
   <div id="loginScreen">
     <div class="input-group">
       <label>كلمة المرور للوصول:</label>
@@ -59,6 +64,7 @@
     <button onclick="checkPin()">دخول</button>
   </div>
 
+  <!-- شاشة البحث -->
   <div id="appScreen" style="display: none;">
     <div class="search-box">
       <input type="text" id="searchInput" oninput="searchStudents()" placeholder="ابحث باسم الطالب، رقم الطالب، أو رقم ولي الأمر...">
@@ -66,10 +72,19 @@
     <div id="resultsList"></div>
   </div>
 
+  <!-- شاشة التقرير -->
   <div id="reportScreen" style="display: none;">
     <button class="btn-back" onclick="showAppScreen()">← العودة للبحث</button>
     <div id="reportContent"></div>
-    <button id="whatsappBtn" class="btn-whatsapp" onclick="sendWhatsappReport()">📲 إرسال التقرير عبر واتساب لولي الأمر</button>
+
+    <div class="whatsapp-box">
+      <div class="input-group">
+        <label>📲 رقم الهواتف للإرسال عبر واتساب:</label>
+        <input type="text" id="customPhoneInput" placeholder="أدخل الرقم المراد الإرسال إليه...">
+      </div>
+      <button class="btn-whatsapp" onclick="sendWhatsappReport()">إرسال التقرير عبر واتساب</button>
+      <button class="btn-copy" onclick="copyReportText()">📋 نسخ نص التقرير</button>
+    </div>
   </div>
 </div>
 
@@ -132,7 +147,7 @@
   function formatExternalUrl(url) {
     if (!url) return "";
     let trimmed = String(url).trim();
-    if (!trimmed) return "";
+    if (!trimmed || trimmed === "undefined" || trimmed === "null") return "";
     if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://")) {
       return "https://" + trimmed;
     }
@@ -149,7 +164,6 @@
 
     const filtered = studentsData.filter(s => {
       const matchName = s.name.toLowerCase().includes(query);
-      
       const sPhoneDigits = extractDigits(s.studentPhone);
       const pPhoneDigits = extractDigits(s.parentPhone);
 
@@ -181,10 +195,21 @@
     document.getElementById("appScreen").style.display = "none";
     document.getElementById("reportScreen").style.display = "block";
 
+    // ضبط الرقم الافتراضي للواتساب
+    const defaultPhone = extractDigits(student.parentPhone || student.studentPhone);
+    document.getElementById("customPhoneInput").value = defaultPhone;
+
     let gradesHTML = "";
     student.grades.forEach(g => {
+      let maxGrade = g.maxScore;
+      
+      // القاعدة الجديدة: أي مراجعة للصف الثالث الثانوي تكون درجتها القصوى من 20
+      if (student.stage && student.stage.includes("الثالث الثانوي") && g.title.includes("مراجعة")) {
+        maxGrade = 20;
+      }
+
       const isNoGrade = g.score === "لا يوجد درجة";
-      const displayScore = isNoGrade ? `<span class="no-grade">لا يوجد درجة</span>` : `${g.score} / ${g.maxScore}`;
+      const displayScore = isNoGrade ? `<span class="no-grade">لا يوجد درجة</span>` : `${g.score} / ${maxGrade}`;
       gradesHTML += `
         <div class="grade-row">
           <span class="grade-title">${g.title}</span>
@@ -193,8 +218,9 @@
       `;
     });
 
-    const validLink = formatExternalUrl(student.profileLink);
-    let linkHTML = validLink ? `<a href="${validLink}" target="_blank" class="link-btn">📌 تقرير غياب الطالب</a>` : '';
+    // معالجة رابط تقرير الغياب
+    const absenceUrl = formatExternalUrl(student.profileLink);
+    let absenceBtnHTML = absenceUrl ? `<a href="${absenceUrl}" target="_blank" class="absence-btn">📌 تقرير غياب الطالب</a>` : '';
 
     document.getElementById("reportContent").innerHTML = `
       <div class="report-header">
@@ -204,23 +230,18 @@
         <div><strong>رقم الطالب:</strong> ${student.studentPhone || "غير مسجل"}</div>
         <div><strong>رقم ولي الأمر:</strong> ${student.parentPhone || "غير مسجل"}</div>
       </div>
+      
+      ${absenceBtnHTML}
+
       <h4 style="margin-bottom:10px; border-bottom:2px solid #0b5ed7; padding-bottom:5px;">درجات الاختبارات والواجبات:</h4>
       ${gradesHTML}
-      ${linkHTML}
+
+      <div class="signature">مع تحيات أ. محمد شحاتة (مدرس المواد الشرعية)</div>
     `;
   }
 
-  function sendWhatsappReport() {
-    if (!currentStudent) return;
-
-    let targetPhone = extractDigits(currentStudent.parentPhone || currentStudent.studentPhone);
-    if (!targetPhone) {
-      alert("لا يوجد رقم هاتف مسجل لهذا الطالب إرسال التقرير إليه!");
-      return;
-    }
-
-    if (targetPhone.startsWith("0")) targetPhone = "2" + targetPhone;
-    if (!targetPhone.startsWith("20")) targetPhone = "20" + targetPhone;
+  function buildMessageText() {
+    if (!currentStudent) return "";
 
     let msg = `*تقرير متابعة الطالب*\n`;
     msg += `👤 *الاسم:* ${currentStudent.name}\n`;
@@ -230,18 +251,44 @@
     msg += `📊 *تفاصيل الدرجات والواجبات:*\n\n`;
 
     currentStudent.grades.forEach(g => {
-      msg += `• ${g.title}: ${g.score === 'لا يوجد درجة' ? 'لا يوجد درجة' : g.score + ' / ' + g.maxScore}\n`;
+      let maxGrade = g.maxScore;
+      if (currentStudent.stage && currentStudent.stage.includes("الثالث الثانوي") && g.title.includes("مراجعة")) {
+        maxGrade = 20;
+      }
+      msg += `• ${g.title}: ${g.score === 'لا يوجد درجة' ? 'لا يوجد درجة' : g.score + ' / ' + maxGrade}\n`;
     });
 
-    const validLink = formatExternalUrl(currentStudent.profileLink);
-    if (validLink) {
-      msg += `\n📌 *تقرير غياب الطالب:* ${validLink}\n`;
+    const absenceUrl = formatExternalUrl(currentStudent.profileLink);
+    if (absenceUrl) {
+      msg += `\n📌 *تقرير غياب الطالب:* ${absenceUrl}\n`;
     }
 
-    msg += `\nمع تحيات إدارة المتابعة التعليمية.`;
+    msg += `\nمع تحيات أ. محمد شحاتة (مدرس المواد الشرعية)`;
+    return msg;
+  }
 
-    const encodedMsg = encodeURIComponent(msg);
+  function sendWhatsappReport() {
+    const inputPhone = document.getElementById("customPhoneInput").value.trim();
+    let targetPhone = extractDigits(inputPhone);
+
+    if (!targetPhone) {
+      alert("يرجى إدخال رقم هاتف صحيح للإرسال!");
+      return;
+    }
+
+    if (targetPhone.startsWith("0")) targetPhone = "2" + targetPhone;
+    if (!targetPhone.startsWith("20")) targetPhone = "20" + targetPhone;
+
+    const msgText = buildMessageText();
+    const encodedMsg = encodeURIComponent(msgText);
     window.open(`https://wa.me/${targetPhone}?text=${encodedMsg}`, '_blank');
+  }
+
+  function copyReportText() {
+    const msgText = buildMessageText();
+    navigator.clipboard.writeText(msgText).then(() => {
+      alert("تم نسخ نص التقرير بنجاح!");
+    });
   }
 
   function showAppScreen() {
