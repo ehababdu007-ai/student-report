@@ -110,25 +110,41 @@
     const lastSync = localStorage.getItem("last_sync_time");
 
     if (cached) {
-      studentsData = JSON.parse(cached);
-      updateStatus("آخر مزامنة: " + (lastSync || "محلياً"));
+      try {
+        studentsData = JSON.parse(cached);
+        updateStatus("آخر مزامنة: " + (lastSync || "محلياً"));
+      } catch(e) {
+        localStorage.removeItem("students_cache");
+      }
     } else {
       updateStatus("جاري جلب البيانات لأول مرة...");
     }
 
     try {
-      const response = await fetch(API_URL);
+      // توجيه مناسب يتوافق مع أجهزة iOS / Safari
+      const response = await fetch(API_URL, {
+        method: "GET",
+        redirect: "follow",
+        headers: { "Accept": "application/json" }
+      });
+      
       const data = await response.json();
-      if (data && data.students) {
+      if (data && data.students && Array.isArray(data.students)) {
         studentsData = data.students;
         const now = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
         localStorage.setItem("students_cache", JSON.stringify(studentsData));
         localStorage.setItem("last_sync_time", now);
         updateStatus("تمت المزامنة بنجاح الساعة " + now);
+        
+        // إعادة تنفيذ البحث لو كان هناك نص مكتوب بالفعل
+        if (document.getElementById("searchInput").value.trim() !== "") {
+          searchStudents();
+        }
       }
     } catch (err) {
-      if (cached) {
-        updateStatus("وضع أوفلاين (تعذر الاتصال بالإنترنت)");
+      console.error("Fetch Error:", err);
+      if (studentsData.length > 0) {
+        updateStatus("وضع أوفلاين (تعذر الاتصال بالشبكة)");
       } else {
         updateStatus("خطأ في جلب البيانات، يرجى التوصيل بالإنترنت.");
       }
@@ -144,6 +160,14 @@
     return String(val).replace(/\D/g, "");
   }
 
+  function normalizeText(text) {
+    if (!text) return "";
+    return String(text)
+      .trim()
+      .toLowerCase()
+      .replace(/[\u200B-\u200D\uFEFF]/g, ''); // إزالة الرموز الخفية من كيبورد الأيفون
+  }
+
   function formatExternalUrl(url) {
     if (!url) return "";
     let trimmed = String(url).trim();
@@ -155,20 +179,28 @@
   }
 
   function searchStudents() {
-    const query = document.getElementById("searchInput").value.trim().toLowerCase();
-    const queryDigits = extractDigits(query);
+    const rawQuery = document.getElementById("searchInput").value;
+    const query = normalizeText(rawQuery);
+    const queryDigits = extractDigits(rawQuery);
     const resultsContainer = document.getElementById("resultsList");
     resultsContainer.innerHTML = "";
 
-    if (query.length < 2) return;
+    if (query.length < 1) return;
+
+    if (!studentsData || studentsData.length === 0) {
+      resultsContainer.innerHTML = "<div style='text-align:center; color:#d9534f; margin-top:10px;'>جاري تحميل البيانات... يرجى الانتظار ثوانٍ ثم المحاولة</div>";
+      return;
+    }
 
     const filtered = studentsData.filter(s => {
-      const matchName = s.name.toLowerCase().includes(query);
+      const sName = normalizeText(s.name);
+      const matchName = sName.includes(query);
+      
       const sPhoneDigits = extractDigits(s.studentPhone);
       const pPhoneDigits = extractDigits(s.parentPhone);
 
-      const matchStudentPhone = queryDigits.length >= 3 && sPhoneDigits.includes(queryDigits);
-      const matchParentPhone = queryDigits.length >= 3 && pPhoneDigits.includes(queryDigits);
+      const matchStudentPhone = queryDigits.length >= 2 && sPhoneDigits.includes(queryDigits);
+      const matchParentPhone = queryDigits.length >= 2 && pPhoneDigits.includes(queryDigits);
 
       return matchName || matchStudentPhone || matchParentPhone;
     });
@@ -195,30 +227,29 @@
     document.getElementById("appScreen").style.display = "none";
     document.getElementById("reportScreen").style.display = "block";
 
-    // ضبط الرقم الافتراضي للواتساب
     const defaultPhone = extractDigits(student.parentPhone || student.studentPhone);
     document.getElementById("customPhoneInput").value = defaultPhone;
 
     let gradesHTML = "";
-    student.grades.forEach(g => {
-      let maxGrade = g.maxScore;
-      
-      // القاعدة الجديدة: أي مراجعة للصف الثالث الثانوي تكون درجتها القصوى من 20
-      if (student.stage && student.stage.includes("الثالث الثانوي") && g.title.includes("مراجعة")) {
-        maxGrade = 20;
-      }
+    if (student.grades && Array.isArray(student.grades)) {
+      student.grades.forEach(g => {
+        let maxGrade = g.maxScore;
+        
+        if (student.stage && student.stage.includes("الثالث الثانوي") && g.title && g.title.includes("مراجعة")) {
+          maxGrade = 20;
+        }
 
-      const isNoGrade = g.score === "لا يوجد درجة";
-      const displayScore = isNoGrade ? `<span class="no-grade">لا يوجد درجة</span>` : `${g.score} / ${maxGrade}`;
-      gradesHTML += `
-        <div class="grade-row">
-          <span class="grade-title">${g.title}</span>
-          <span class="grade-val">${displayScore}</span>
-        </div>
-      `;
-    });
+        const isNoGrade = g.score === "لا يوجد درجة";
+        const displayScore = isNoGrade ? `<span class="no-grade">لا يوجد درجة</span>` : `${g.score} / ${maxGrade}`;
+        gradesHTML += `
+          <div class="grade-row">
+            <span class="grade-title">${g.title}</span>
+            <span class="grade-val">${displayScore}</span>
+          </div>
+        `;
+      });
+    }
 
-    // معالجة رابط تقرير الغياب
     const absenceUrl = formatExternalUrl(student.profileLink);
     let absenceBtnHTML = absenceUrl ? `<a href="${absenceUrl}" target="_blank" class="absence-btn">📌 تقرير غياب الطالب</a>` : '';
 
@@ -250,13 +281,15 @@
     msg += `-----------------------------------\n`;
     msg += `📊 *تفاصيل الدرجات والواجبات:*\n\n`;
 
-    currentStudent.grades.forEach(g => {
-      let maxGrade = g.maxScore;
-      if (currentStudent.stage && currentStudent.stage.includes("الثالث الثانوي") && g.title.includes("مراجعة")) {
-        maxGrade = 20;
-      }
-      msg += `• ${g.title}: ${g.score === 'لا يوجد درجة' ? 'لا يوجد درجة' : g.score + ' / ' + maxGrade}\n`;
-    });
+    if (currentStudent.grades && Array.isArray(currentStudent.grades)) {
+      currentStudent.grades.forEach(g => {
+        let maxGrade = g.maxScore;
+        if (currentStudent.stage && currentStudent.stage.includes("الثالث الثانوي") && g.title && g.title.includes("مراجعة")) {
+          maxGrade = 20;
+        }
+        msg += `• ${g.title}: ${g.score === 'لا يوجد درجة' ? 'لا يوجد درجة' : g.score + ' / ' + maxGrade}\n`;
+      });
+    }
 
     const absenceUrl = formatExternalUrl(currentStudent.profileLink);
     if (absenceUrl) {
@@ -286,9 +319,32 @@
 
   function copyReportText() {
     const msgText = buildMessageText();
-    navigator.clipboard.writeText(msgText).then(() => {
+    if (!msgText) return;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(msgText).then(() => {
+        alert("تم نسخ نص التقرير بنجاح!");
+      }).catch(() => {
+        fallbackCopyText(msgText);
+      });
+    } else {
+      fallbackCopyText(msgText);
+    }
+  }
+
+  function fallbackCopyText(text) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+      document.execCommand('copy');
       alert("تم نسخ نص التقرير بنجاح!");
-    });
+    } catch (err) {
+      alert("عذراً، فشل النسخ التلقائي.");
+    }
+    document.body.removeChild(textArea);
   }
 
   function showAppScreen() {
