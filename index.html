@@ -56,7 +56,7 @@
     <div class="status-bar" id="syncStatus">جاري التحقق من البيانات...</div>
   </div>
 
-  <!-- شاشة تسجيل الدخول -->
+  <!-- تسجيل الدخول -->
   <div id="loginScreen">
     <div class="input-group">
       <label>كلمة المرور للوصول:</label>
@@ -232,7 +232,6 @@
       const sPhoneDigits = extractDigits(s.studentPhone);
       const pPhoneDigits = extractDigits(s.parentPhone);
 
-      // البحث المرن: يطابق النص أو الأرقام بأي جزء تم إدخاله
       const matchStudentPhone = queryDigits.length > 0 && sPhoneDigits.includes(queryDigits);
       const matchParentPhone = queryDigits.length > 0 && pPhoneDigits.includes(queryDigits);
 
