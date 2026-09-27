@@ -90,7 +90,7 @@
 </div>
 
 <script>
-  const API_URL = "https://script.google.com/macros/s/AKfycbw7TDCj4Mod9VkpCsoJYG5DZJR1kPBJGKyJ2UjPBa4rppuUgJScWO8-TJfn-osJpLda/exec";
+  const API_URL = "https://script.google.com/macros/s/AKfycbwPR3zn9PUTMUrNMel0Vhv42upaM5GmVzWLED9hnBCz5LDH2Ve4ltFMtyx_Nk98NYIA/exec";
   const DEFAULT_PIN = "1234";
   let studentsData = [];
   let currentStudent = null;
@@ -167,11 +167,10 @@
       .replace(/[\u200B-\u200D\uFEFF]/g, '');
   }
 
-  // تنظيف واستخراج الرابط الصحيح وإزالة أي مسافات زائدة
   function getValidUrl(url) {
     if (!url) return "";
-    let trimmed = String(url).replace(/\s+/g, "").trim(); // إزالة كل المسافات
-    if (!trimmed || trimmed === "undefined" || trimmed === "null" || trimmed.includes("xn--")) return "";
+    let trimmed = String(url).replace(/\s+/g, "").trim();
+    if (!trimmed || trimmed === "undefined" || trimmed === "null") return "";
     if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://")) {
       return "https://" + trimmed;
     }
@@ -183,7 +182,7 @@
     if (validUrl) {
       window.open(validUrl, '_blank');
     } else {
-      alert("الرابط المسجل في الشيت غير صالح أو يحتوي على مسافات خاطئة!");
+      alert("لا يوجد رابط مسجل لهذا الطالب في الشيت!");
     }
   }
 
@@ -282,14 +281,13 @@
       });
     }
 
-    const rawLink = student.profileLink || student.studentLink || student.link || student["رابط الطالب"] || "";
-    const absenceUrl = getValidUrl(rawLink);
+    const absenceUrl = getValidUrl(student.profileLink);
     
     let absenceBtnHTML = "";
     if (absenceUrl) {
-      absenceBtnHTML = `<button type="button" class="absence-btn" onclick="openLink('${rawLink}')">📌 تقرير غياب الطالب</button>`;
+      absenceBtnHTML = `<button type="button" class="absence-btn" onclick="openLink('${absenceUrl}')">📌 تقرير غياب الطالب</button>`;
     } else {
-      absenceBtnHTML = `<button type="button" class="absence-btn" style="background-color:#ccc; cursor:not-allowed;" onclick="alert('لا يوجد رابط غياب صالح مسجل لهذا الطالب في الشيت')">📌 تقرير غياب الطالب (غير متوفر)</button>`;
+      absenceBtnHTML = `<button type="button" class="absence-btn" style="background-color:#ccc; cursor:not-allowed;" onclick="alert('لا يوجد رابط غياب مسجل لهذا الطالب في الشيت')">📌 تقرير غياب الطالب (غير متوفر)</button>`;
     }
 
     document.getElementById("reportContent").innerHTML = `
@@ -330,8 +328,7 @@
       });
     }
 
-    const rawLink = currentStudent.profileLink || currentStudent.studentLink || currentStudent.link || currentStudent["رابط الطالب"] || "";
-    const absenceUrl = getValidUrl(rawLink);
+    const absenceUrl = getValidUrl(currentStudent.profileLink);
     if (absenceUrl) {
       msg += `\n📌 *تقرير غياب الطالب:* ${absenceUrl}\n`;
     }
@@ -345,7 +342,7 @@
     let targetPhone = extractDigits(inputPhone);
 
     if (!targetPhone) {
-      alert("يرجى إدخل رقم هاتف صحيح للإرسال!");
+      alert("يرجى إدخال رقم هاتف صحيح للإرسال!");
       return;
     }
 
