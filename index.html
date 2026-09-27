@@ -42,7 +42,7 @@
     .grade-val { font-weight: bold; font-size: 15px; color: #2c3e50; }
     .no-grade { color: #d9534f; font-weight: normal; }
     
-    .absence-btn { display: block; text-align: center; margin: 15px 0; text-decoration: none; background-color: #dc3545; color: #fff; padding: 12px; border-radius: 8px; font-weight: bold; transition: 0.2s; }
+    .absence-btn { display: block; width: 100%; text-align: center; margin: 15px 0; background-color: #dc3545; color: #fff; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; border: none; font-size: 16px; text-decoration: none; }
     .absence-btn:hover { background-color: #bb2d3b; }
     .whatsapp-box { background: #f8f9fa; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-top: 15px; }
     .signature { text-align: center; font-weight: bold; margin-top: 15px; padding-top: 10px; border-top: 1px dashed #ccc; color: #0b5ed7; }
@@ -167,7 +167,7 @@
       .replace(/[\u200B-\u200D\uFEFF]/g, '');
   }
 
-  function formatExternalUrl(url) {
+  function getValidUrl(url) {
     if (!url) return "";
     let trimmed = String(url).trim();
     if (!trimmed || trimmed === "undefined" || trimmed === "null") return "";
@@ -177,20 +177,35 @@
     return trimmed;
   }
 
-  // دالة فحص وتفريغ الدرجة العظمى من العنوان (تستوعب الأقواس الإنجليزية والعربية)
+  function openLink(url) {
+    const validUrl = getValidUrl(url);
+    if (validUrl) {
+      window.open(validUrl, '_blank');
+    } else {
+      alert("لا يوجد رابط مسجل لهذا الطالب!");
+    }
+  }
+
+  // دالة فحص واستخراج الدرجة القصوى وتصفية الأعمدة المساندة (مثل أرقام الهواتف أو روابط التقرير)
   function parseGradeInfo(title, defaultMax, stage) {
     let cleanTitle = String(title || "").trim();
-    let maxGrade = defaultMax;
+    
+    // استبعاد العناوين المساندة التي أُدرجت خطأ كأنها امتحانات
+    const ignoredKeywords = ["رقم الطالب", "تليفون الطالب", "هاتف الطالب", "رابط الطالب", "رابط تقرير غياب الطالب", "تليفون ولي الأمر", "رقم ولي الأمر"];
+    for (let keyword of ignoredKeywords) {
+      if (cleanTitle.includes(keyword)) {
+        return null; // إلغاء إظهاره كامتحان
+      }
+    }
 
+    let maxGrade = defaultMax;
     // استخراج الأرقام من داخل الأقواس مثل (25) أو (15)
     const match = cleanTitle.match(/[\(\（]\s*([\d\.]+)\s*[\)\）]/);
 
     if (match) {
       maxGrade = parseFloat(match[1]);
-      // إزالة القوسين وما بينهما من العنوان النهائي
       cleanTitle = cleanTitle.replace(/[\(\（]\s*[\d\.]+\s*[\)\）]/g, "").trim();
     } else {
-      // القانون القديم: إذا لم يُحدد رقم بين قوسين وكانت المراجعة للصف الثالث الثانوي
       if (stage && stage.includes("الثالث الثانوي") && cleanTitle.includes("مراجعة")) {
         maxGrade = 20;
       }
@@ -255,22 +270,30 @@
     if (student.grades && Array.isArray(student.grades)) {
       student.grades.forEach(g => {
         const parsed = parseGradeInfo(g.title, g.maxScore, student.stage);
-        const isNoGrade = (g.score === "لا يوجد درجة" || g.score === "" || g.score === null);
-        const displayScore = isNoGrade ? `<span class="no-grade">لا يوجد درجة</span>` : `${g.score} / ${parsed.maxScore}`;
-        
-        gradesHTML += `
-          <div class="grade-row">
-            <span class="grade-title">${parsed.title}</span>
-            <span class="grade-val">${displayScore}</span>
-          </div>
-        `;
+        if (parsed) { // طباعة الامتحانات الحقيقية فقط وترشيح أرقام الهواتف والروابط
+          const isNoGrade = (g.score === "لا يوجد درجة" || g.score === "" || g.score === null);
+          const displayScore = isNoGrade ? `<span class="no-grade">لا يوجد درجة</span>` : `${g.score} / ${parsed.maxScore}`;
+          
+          gradesHTML += `
+            <div class="grade-row">
+              <span class="grade-title">${parsed.title}</span>
+              <span class="grade-val">${displayScore}</span>
+            </div>
+          `;
+        }
       });
     }
 
-    // رابط تقرير غياب الطالب المأخوذ من عمود "رابط الطالب" أو "رابط تقرير الغياب"
-    const rawLink = student.profileLink || student.studentLink || student.link || "";
-    const absenceUrl = formatExternalUrl(rawLink);
-    let absenceBtnHTML = absenceUrl ? `<a href="${absenceUrl}" target="_blank" rel="noopener noreferrer" class="absence-btn">📌 تقرير غياب الطالب</a>` : '';
+    // استخراج رابط الطالب وتجهيز زر مباشر يفتح الرابط بأمان
+    const rawLink = student.profileLink || student.studentLink || student.link || student["رابط الطالب"] || "";
+    const absenceUrl = getValidUrl(rawLink);
+    
+    let absenceBtnHTML = "";
+    if (absenceUrl) {
+      absenceBtnHTML = `<button type="button" class="absence-btn" onclick="openLink('${absenceUrl}')">📌 تقرير غياب الطالب</button>`;
+    } else {
+      absenceBtnHTML = `<button type="button" class="absence-btn" style="background-color:#ccc; cursor:not-allowed;" onclick="alert('لا يوجد رابط غياب مسجل لهذا الطالب في الشيت')">📌 تقرير غياب الطالب (غير متوفر)</button>`;
+    }
 
     document.getElementById("reportContent").innerHTML = `
       <div class="report-header">
@@ -303,13 +326,15 @@
     if (currentStudent.grades && Array.isArray(currentStudent.grades)) {
       currentStudent.grades.forEach(g => {
         const parsed = parseGradeInfo(g.title, g.maxScore, currentStudent.stage);
-        const isNoGrade = (g.score === "لا يوجد درجة" || g.score === "" || g.score === null);
-        msg += `• ${parsed.title}: ${isNoGrade ? 'لا يوجد درجة' : g.score + ' / ' + parsed.maxScore}\n`;
+        if (parsed) {
+          const isNoGrade = (g.score === "لا يوجد درجة" || g.score === "" || g.score === null);
+          msg += `• ${parsed.title}: ${isNoGrade ? 'لا يوجد درجة' : g.score + ' / ' + parsed.maxScore}\n`;
+        }
       });
     }
 
-    const rawLink = currentStudent.profileLink || currentStudent.studentLink || currentStudent.link || "";
-    const absenceUrl = formatExternalUrl(rawLink);
+    const rawLink = currentStudent.profileLink || currentStudent.studentLink || currentStudent.link || currentStudent["رابط الطالب"] || "";
+    const absenceUrl = getValidUrl(rawLink);
     if (absenceUrl) {
       msg += `\n📌 *تقرير غياب الطالب:* ${absenceUrl}\n`;
     }
