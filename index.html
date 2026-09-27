@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>متابعة الطلاب - تقرير الطالب</title>
+  <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogItmF2K3Yp9io2LnYqSDYp9mE2LfZhNin2KkiLAogICJzaG9ydF9uYW1lIjogItmB2YLYsdmK2LEg2KfZhNti2YTYqCIsCiAgInN0YXJ0X3VybCI6ICIuIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjZjRmg1ZjYiLAogICJ0aGVtZV9jb2xvciI6ICIjMGI1ZWQ3Igp9">
+  <style>
+    :root {
+      --primary-color: #0b5ed7;
+      --bg-color: #f4f6f9;
+      --card-bg: #ffffff;
+      --text-color: #212529;
+      --border-color: #e0e0e0;
+    }
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
+    body { background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 15px; }
+    .container { max-width: 600px; margin: 0 auto; }
+    .header { text-align: center; margin-bottom: 20px; }
+    .header h2 { margin: 5px 0; color: var(--primary-color); }
+    .status-bar { font-size: 12px; color: #6c757d; text-align: center; margin-bottom: 15px; }
+    
+    #loginScreen, #appScreen, #reportScreen { background: var(--card-bg); padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .input-group { margin-bottom: 15px; }
+    label { display: block; margin-bottom: 5px; font-weight: bold; }
+    input[type="text"], input[type="password"] { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 16px; outline: none; }
+    button { width: 100%; padding: 12px; background: var(--primary-color); color: #fff; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; }
+    
+    .search-box { position: relative; margin-bottom: 15px; }
+    .student-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; margin-bottom: 10px; cursor: pointer; transition: 0.2s; }
+    .student-card:hover { border-color: var(--primary-color); }
+    .student-name { font-weight: bold; font-size: 17px; color: #111; }
+    .student-info { font-size: 14px; color: #555; margin-top: 4px; }
+    
+    .report-header { background: #eef4ff; border-radius: 8px; padding: 15px; margin-bottom: 15px; border-right: 4px solid var(--primary-color); }
+    .grade-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
+    .grade-title { font-size: 14px; font-weight: 500; }
+    .grade-val { font-weight: bold; font-size: 15px; color: #2c3e50; }
+    .no-grade { color: #d9534f; font-weight: normal; }
+    .back-btn { background: #6c757d; margin-bottom: 15px; }
+    .link-btn { display: block; text-align: center; margin-top: 15px; text-decoration: none; color: var(--primary-color); font-weight: bold; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h2>متابعة الطلاب</h2>
+    <div class="status-bar" id="syncStatus">جاري التحقق من البيانات...</div>
+  </div>
+
+  <div id="loginScreen">
+    <div class="input-group">
+      <label>كلمة المرور للوصول:</label>
+      <input type="password" id="pinInput" placeholder="أدخل كلمة المرور (1234)">
+    </div>
+    <button onclick="checkPin()">دخول</button>
+  </div>
+
+  <div id="appScreen" style="display: none;">
+    <div class="search-box">
+      <input type="text" id="searchInput" oninput="searchStudents()" placeholder="ابحث باسم الطالب، رقم الطالب، أو رقم ولي الأمر...">
+    </div>
+    <div id="resultsList"></div>
+  </div>
+
+  <div id="reportScreen" style="display: none;">
+    <button class="back-btn" onclick="showAppScreen()">← العودة للبحث</button>
+    <div id="reportContent"></div>
+  </div>
+</div>
+
+<script>
+  const API_URL = "https://script.google.com/macros/s/AKfycbw7TDCj4Mod9VkpCsoJYG5DZJR1kPBJGKyJ2UjPBa4rppuUgJScWO8-TJfn-osJpLda/exec";
+  const DEFAULT_PIN = "1234";
+  let studentsData = [];
+
+  function checkPin() {
+    const pin = document.getElementById("pinInput").value;
+    if (pin === DEFAULT_PIN) {
+      document.getElementById("loginScreen").style.display = "none";
+      document.getElementById("appScreen").style.display = "block";
+      initData();
+    } else {
+      alert("كلمة المرور غير صحيحة!");
+    }
+  }
+
+  async function initData() {
+    const cached = localStorage.getItem("students_cache");
+    const lastSync = localStorage.getItem("last_sync_time");
+
+    if (cached) {
+      studentsData = JSON.parse(cached);
+      updateStatus("آخر مزامنة: " + (lastSync || "محلياً"));
+    } else {
+      updateStatus("جاري جلب البيانات لأول مرة...");
+    }
+
+    try {
+      const response = await fetch(API_URL);
+      const data = await response.json();
+      if (data && data.students) {
+        studentsData = data.students;
+        const now = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+        localStorage.setItem("students_cache", JSON.stringify(studentsData));
+        localStorage.setItem("last_sync_time", now);
+        updateStatus("تمت المزامنة بنجاح الساعة " + now);
+      }
+    } catch (err) {
+      if (cached) {
+        updateStatus("وضع أوفلاين (تعذر الاتصال بالإنترنت)");
+      } else {
+        updateStatus("خطأ في جلب البيانات، يرجى التوصيل بالإنترنت.");
+      }
+    }
+  }
+
+  function updateStatus(msg) {
+    document.getElementById("syncStatus").innerText = msg;
+  }
+
+  function cleanPhone(phone) {
+    if (!phone) return "";
+    let str = String(phone).replace(/\D/g, "");
+    if (str.startsWith("002")) str = str.substring(3);
+    else if (str.startsWith("20")) str = str.substring(2);
+    else if (str.startsWith("2")) str = str.substring(1);
+    return str;
+  }
+
+  function searchStudents() {
+    const query = document.getElementById("searchInput").value.trim().toLowerCase();
+    const cleanQuery = cleanPhone(query);
+    const resultsContainer = document.getElementById("resultsList");
+    resultsContainer.innerHTML = "";
+
+    if (query.length < 2) return;
+
+    const filtered = studentsData.filter(s => {
+      const matchName = s.name.toLowerCase().includes(query);
+      const matchStudentPhone = s.cleanStudentPhone && cleanQuery && s.cleanStudentPhone.includes(cleanQuery);
+      const matchParentPhone = s.cleanParentPhone && cleanQuery && s.cleanParentPhone.includes(cleanQuery);
+      return matchName || matchStudentPhone || matchParentPhone;
+    });
+
+    if (filtered.length === 0) {
+      resultsContainer.innerHTML = "<div style='text-align:center; color:#777; margin-top:10px;'>لا توجد نتائج مطابقة</div>";
+      return;
+    }
+
+    filtered.forEach(student => {
+      const card = document.createElement("div");
+      card.className = "student-card";
+      card.onclick = () => renderReport(student);
+      card.innerHTML = `
+        <div class="student-name">${student.name}</div>
+        <div class="student-info">المرحلة: ${student.stage} | المجموعة: ${student.group || "غير محددة"}</div>
+      `;
+      resultsContainer.appendChild(card);
+    });
+  }
+
+  function renderReport(student) {
+    document.getElementById("appScreen").style.display = "none";
+    document.getElementById("reportScreen").style.display = "block";
+
+    let gradesHTML = "";
+    student.grades.forEach(g => {
+      const isNoGrade = g.score === "لا يوجد درجة";
+      const displayScore = isNoGrade ? `<span class="no-grade">لا يوجد درجة</span>` : `${g.score} / ${g.maxScore}`;
+      gradesHTML += `
+        <div class="grade-row">
+          <span class="grade-title">${g.title}</span>
+          <span class="grade-val">${displayScore}</span>
+        </div>
+      `;
+    });
+
+    let linkHTML = student.profileLink ? `<a href="${student.profileLink}" target="_blank" class="link-btn">فتح صفحة الطالب الأصلية 🔗</a>` : '';
+
+    document.getElementById("reportContent").innerHTML = `
+      <div class="report-header">
+        <h3 style="margin:0 0 8px 0; font-size:20px;">${student.name}</h3>
+        <div><strong>المرحلة:</strong> ${student.stage}</div>
+        <div><strong>المجموعة:</strong> ${student.group || "غير محددة"}</div>
+        <div><strong>رقم الطالب:</strong> ${student.studentPhone || "غير مسجل"}</div>
+        <div><strong>رقم ولي الأمر:</strong> ${student.parentPhone || "غير مسجل"}</div>
+      </div>
+      <h4 style="margin-bottom:10px; border-bottom:2px solid #0b5ed7; padding-bottom:5px;">درجات الاختبارات والواجبات:</h4>
+      ${gradesHTML}
+      ${linkHTML}
+    `;
+  }
+
+  function showAppScreen() {
+    document.getElementById("reportScreen").style.display = "none";
+    document.getElementById("appScreen").style.display = "block";
+  }
+</script>
+</body>
+</html>
