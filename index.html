@@ -42,7 +42,8 @@
     .grade-val { font-weight: bold; font-size: 15px; color: #2c3e50; }
     .no-grade { color: #d9534f; font-weight: normal; }
     
-    .absence-btn { display: block; text-align: center; margin: 15px 0; text-decoration: none; background-color: #d9534f; color: #fff; padding: 12px; border-radius: 8px; font-weight: bold; }
+    .absence-btn { display: block; text-align: center; margin: 15px 0; text-decoration: none; background-color: #dc3545; color: #fff; padding: 12px; border-radius: 8px; font-weight: bold; transition: 0.2s; }
+    .absence-btn:hover { background-color: #bb2d3b; }
     .whatsapp-box { background: #f8f9fa; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-top: 15px; }
     .signature { text-align: center; font-weight: bold; margin-top: 15px; padding-top: 10px; border-top: 1px dashed #ccc; color: #0b5ed7; }
   </style>
@@ -79,7 +80,7 @@
 
     <div class="whatsapp-box">
       <div class="input-group">
-        <label>📲 رقم الهواتف للإرسال عبر واتساب:</label>
+        <label>📲 رقم الهاتف للإرسال عبر واتساب:</label>
         <input type="text" id="customPhoneInput" placeholder="أدخل الرقم المراد الإرسال إليه...">
       </div>
       <button class="btn-whatsapp" onclick="sendWhatsappReport()">إرسال التقرير عبر واتساب</button>
@@ -121,7 +122,6 @@
     }
 
     try {
-      // توجيه مناسب يتوافق مع أجهزة iOS / Safari
       const response = await fetch(API_URL, {
         method: "GET",
         redirect: "follow",
@@ -136,7 +136,6 @@
         localStorage.setItem("last_sync_time", now);
         updateStatus("تمت المزامنة بنجاح الساعة " + now);
         
-        // إعادة تنفيذ البحث لو كان هناك نص مكتوب بالفعل
         if (document.getElementById("searchInput").value.trim() !== "") {
           searchStudents();
         }
@@ -165,7 +164,7 @@
     return String(text)
       .trim()
       .toLowerCase()
-      .replace(/[\u200B-\u200D\uFEFF]/g, ''); // إزالة الرموز الخفية من كيبورد الأيفون
+      .replace(/[\u200B-\u200D\uFEFF]/g, '');
   }
 
   function formatExternalUrl(url) {
@@ -176,6 +175,28 @@
       return "https://" + trimmed;
     }
     return trimmed;
+  }
+
+  // دالة فحص وتفريغ الدرجة العظمى من العنوان (تستوعب الأقواس الإنجليزية والعربية)
+  function parseGradeInfo(title, defaultMax, stage) {
+    let cleanTitle = String(title || "").trim();
+    let maxGrade = defaultMax;
+
+    // استخراج الأرقام من داخل الأقواس مثل (25) أو (15)
+    const match = cleanTitle.match(/[\(\（]\s*([\d\.]+)\s*[\)\）]/);
+
+    if (match) {
+      maxGrade = parseFloat(match[1]);
+      // إزالة القوسين وما بينهما من العنوان النهائي
+      cleanTitle = cleanTitle.replace(/[\(\（]\s*[\d\.]+\s*[\)\）]/g, "").trim();
+    } else {
+      // القانون القديم: إذا لم يُحدد رقم بين قوسين وكانت المراجعة للصف الثالث الثانوي
+      if (stage && stage.includes("الثالث الثانوي") && cleanTitle.includes("مراجعة")) {
+        maxGrade = 20;
+      }
+    }
+
+    return { title: cleanTitle, maxScore: maxGrade };
   }
 
   function searchStudents() {
@@ -233,25 +254,23 @@
     let gradesHTML = "";
     if (student.grades && Array.isArray(student.grades)) {
       student.grades.forEach(g => {
-        let maxGrade = g.maxScore;
+        const parsed = parseGradeInfo(g.title, g.maxScore, student.stage);
+        const isNoGrade = (g.score === "لا يوجد درجة" || g.score === "" || g.score === null);
+        const displayScore = isNoGrade ? `<span class="no-grade">لا يوجد درجة</span>` : `${g.score} / ${parsed.maxScore}`;
         
-        if (student.stage && student.stage.includes("الثالث الثانوي") && g.title && g.title.includes("مراجعة")) {
-          maxGrade = 20;
-        }
-
-        const isNoGrade = g.score === "لا يوجد درجة";
-        const displayScore = isNoGrade ? `<span class="no-grade">لا يوجد درجة</span>` : `${g.score} / ${maxGrade}`;
         gradesHTML += `
           <div class="grade-row">
-            <span class="grade-title">${g.title}</span>
+            <span class="grade-title">${parsed.title}</span>
             <span class="grade-val">${displayScore}</span>
           </div>
         `;
       });
     }
 
-    const absenceUrl = formatExternalUrl(student.profileLink);
-    let absenceBtnHTML = absenceUrl ? `<a href="${absenceUrl}" target="_blank" class="absence-btn">📌 تقرير غياب الطالب</a>` : '';
+    // رابط تقرير غياب الطالب المأخوذ من عمود "رابط الطالب" أو "رابط تقرير الغياب"
+    const rawLink = student.profileLink || student.studentLink || student.link || "";
+    const absenceUrl = formatExternalUrl(rawLink);
+    let absenceBtnHTML = absenceUrl ? `<a href="${absenceUrl}" target="_blank" rel="noopener noreferrer" class="absence-btn">📌 تقرير غياب الطالب</a>` : '';
 
     document.getElementById("reportContent").innerHTML = `
       <div class="report-header">
@@ -283,15 +302,14 @@
 
     if (currentStudent.grades && Array.isArray(currentStudent.grades)) {
       currentStudent.grades.forEach(g => {
-        let maxGrade = g.maxScore;
-        if (currentStudent.stage && currentStudent.stage.includes("الثالث الثانوي") && g.title && g.title.includes("مراجعة")) {
-          maxGrade = 20;
-        }
-        msg += `• ${g.title}: ${g.score === 'لا يوجد درجة' ? 'لا يوجد درجة' : g.score + ' / ' + maxGrade}\n`;
+        const parsed = parseGradeInfo(g.title, g.maxScore, currentStudent.stage);
+        const isNoGrade = (g.score === "لا يوجد درجة" || g.score === "" || g.score === null);
+        msg += `• ${parsed.title}: ${isNoGrade ? 'لا يوجد درجة' : g.score + ' / ' + parsed.maxScore}\n`;
       });
     }
 
-    const absenceUrl = formatExternalUrl(currentStudent.profileLink);
+    const rawLink = currentStudent.profileLink || currentStudent.studentLink || currentStudent.link || "";
+    const absenceUrl = formatExternalUrl(rawLink);
     if (absenceUrl) {
       msg += `\n📌 *تقرير غياب الطالب:* ${absenceUrl}\n`;
     }
