@@ -121,6 +121,7 @@
     }
 
     try {
+      // توجيه مناسب يتوافق مع أجهزة iOS / Safari
       const response = await fetch(API_URL, {
         method: "GET",
         redirect: "follow",
@@ -135,6 +136,7 @@
         localStorage.setItem("last_sync_time", now);
         updateStatus("تمت المزامنة بنجاح الساعة " + now);
         
+        // إعادة تنفيذ البحث لو كان هناك نص مكتوب بالفعل
         if (document.getElementById("searchInput").value.trim() !== "") {
           searchStudents();
         }
@@ -163,7 +165,7 @@
     return String(text)
       .trim()
       .toLowerCase()
-      .replace(/[\u200B-\u200D\uFEFF]/g, '');
+      .replace(/[\u200B-\u200D\uFEFF]/g, ''); // إزالة الرموز الخفية من كيبورد الأيفون
   }
 
   function formatExternalUrl(url) {
@@ -174,24 +176,6 @@
       return "https://" + trimmed;
     }
     return trimmed;
-  }
-
-  // دالة تحديد الدرجة القصوى بناءً على العبارة بين قوسين أو القواعد القديمة
-  function calculateMaxScore(title, stage, defaultMax) {
-    if (!title) return defaultMax;
-
-    // البحث عن أي أرقام داخل أقواس هكذا (20) أو (15.5) أو ( 30 )
-    const match = title.match(/\((\d+(?:\.\d+)?)\)/);
-    if (match && match[1]) {
-      return parseFloat(match[1]);
-    }
-
-    // تطبيق القانون القديم في حالة عدم وجود أقواس
-    if (stage && stage.includes("الثالث الثانوي") && title.includes("مراجعة")) {
-      return 20;
-    }
-
-    return defaultMax;
   }
 
   function searchStudents() {
@@ -249,7 +233,11 @@
     let gradesHTML = "";
     if (student.grades && Array.isArray(student.grades)) {
       student.grades.forEach(g => {
-        const maxGrade = calculateMaxScore(g.title, student.stage, g.maxScore);
+        let maxGrade = g.maxScore;
+        
+        if (student.stage && student.stage.includes("الثالث الثانوي") && g.title && g.title.includes("مراجعة")) {
+          maxGrade = 20;
+        }
 
         const isNoGrade = g.score === "لا يوجد درجة";
         const displayScore = isNoGrade ? `<span class="no-grade">لا يوجد درجة</span>` : `${g.score} / ${maxGrade}`;
@@ -295,7 +283,10 @@
 
     if (currentStudent.grades && Array.isArray(currentStudent.grades)) {
       currentStudent.grades.forEach(g => {
-        const maxGrade = calculateMaxScore(g.title, currentStudent.stage, g.maxScore);
+        let maxGrade = g.maxScore;
+        if (currentStudent.stage && currentStudent.stage.includes("الثالث الثانوي") && g.title && g.title.includes("مراجعة")) {
+          maxGrade = 20;
+        }
         msg += `• ${g.title}: ${g.score === 'لا يوجد درجة' ? 'لا يوجد درجة' : g.score + ' / ' + maxGrade}\n`;
       });
     }
