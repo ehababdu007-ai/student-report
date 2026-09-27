@@ -167,10 +167,11 @@
       .replace(/[\u200B-\u200D\uFEFF]/g, '');
   }
 
+  // تنظيف واستخراج الرابط الصحيح وإزالة أي مسافات زائدة
   function getValidUrl(url) {
     if (!url) return "";
-    let trimmed = String(url).trim();
-    if (!trimmed || trimmed === "undefined" || trimmed === "null") return "";
+    let trimmed = String(url).replace(/\s+/g, "").trim(); // إزالة كل المسافات
+    if (!trimmed || trimmed === "undefined" || trimmed === "null" || trimmed.includes("xn--")) return "";
     if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://")) {
       return "https://" + trimmed;
     }
@@ -182,24 +183,21 @@
     if (validUrl) {
       window.open(validUrl, '_blank');
     } else {
-      alert("لا يوجد رابط مسجل لهذا الطالب!");
+      alert("الرابط المسجل في الشيت غير صالح أو يحتوي على مسافات خاطئة!");
     }
   }
 
-  // دالة فحص واستخراج الدرجة القصوى وتصفية الأعمدة المساندة (مثل أرقام الهواتف أو روابط التقرير)
   function parseGradeInfo(title, defaultMax, stage) {
     let cleanTitle = String(title || "").trim();
     
-    // استبعاد العناوين المساندة التي أُدرجت خطأ كأنها امتحانات
     const ignoredKeywords = ["رقم الطالب", "تليفون الطالب", "هاتف الطالب", "رابط الطالب", "رابط تقرير غياب الطالب", "تليفون ولي الأمر", "رقم ولي الأمر"];
     for (let keyword of ignoredKeywords) {
       if (cleanTitle.includes(keyword)) {
-        return null; // إلغاء إظهاره كامتحان
+        return null;
       }
     }
 
     let maxGrade = defaultMax;
-    // استخراج الأرقام من داخل الأقواس مثل (25) أو (15)
     const match = cleanTitle.match(/[\(\（]\s*([\d\.]+)\s*[\)\）]/);
 
     if (match) {
@@ -270,7 +268,7 @@
     if (student.grades && Array.isArray(student.grades)) {
       student.grades.forEach(g => {
         const parsed = parseGradeInfo(g.title, g.maxScore, student.stage);
-        if (parsed) { // طباعة الامتحانات الحقيقية فقط وترشيح أرقام الهواتف والروابط
+        if (parsed) {
           const isNoGrade = (g.score === "لا يوجد درجة" || g.score === "" || g.score === null);
           const displayScore = isNoGrade ? `<span class="no-grade">لا يوجد درجة</span>` : `${g.score} / ${parsed.maxScore}`;
           
@@ -284,15 +282,14 @@
       });
     }
 
-    // استخراج رابط الطالب وتجهيز زر مباشر يفتح الرابط بأمان
     const rawLink = student.profileLink || student.studentLink || student.link || student["رابط الطالب"] || "";
     const absenceUrl = getValidUrl(rawLink);
     
     let absenceBtnHTML = "";
     if (absenceUrl) {
-      absenceBtnHTML = `<button type="button" class="absence-btn" onclick="openLink('${absenceUrl}')">📌 تقرير غياب الطالب</button>`;
+      absenceBtnHTML = `<button type="button" class="absence-btn" onclick="openLink('${rawLink}')">📌 تقرير غياب الطالب</button>`;
     } else {
-      absenceBtnHTML = `<button type="button" class="absence-btn" style="background-color:#ccc; cursor:not-allowed;" onclick="alert('لا يوجد رابط غياب مسجل لهذا الطالب في الشيت')">📌 تقرير غياب الطالب (غير متوفر)</button>`;
+      absenceBtnHTML = `<button type="button" class="absence-btn" style="background-color:#ccc; cursor:not-allowed;" onclick="alert('لا يوجد رابط غياب صالح مسجل لهذا الطالب في الشيت')">📌 تقرير غياب الطالب (غير متوفر)</button>`;
     }
 
     document.getElementById("reportContent").innerHTML = `
@@ -348,7 +345,7 @@
     let targetPhone = extractDigits(inputPhone);
 
     if (!targetPhone) {
-      alert("يرجى إدخال رقم هاتف صحيح للإرسال!");
+      alert("يرجى إدخل رقم هاتف صحيح للإرسال!");
       return;
     }
 
