@@ -90,7 +90,7 @@
 </div>
 
 <script>
-  const API_URL = "https://script.google.com/macros/s/AKfycbwPR3zn9PUTMUrNMel0Vhv42upaM5GmVzWLED9hnBCz5LDH2Ve4ltFMtyx_Nk98NYIA/exec";
+  const API_URL = "https://script.google.com/macros/s/AKfycbw7TDCj4Mod9VkpCsoJYG5DZJR1kPBJGKyJ2UjPBa4rppuUgJScWO8-TJfn-osJpLda/exec";
   const DEFAULT_PIN = "1234";
   let studentsData = [];
   let currentStudent = null;
@@ -182,7 +182,7 @@
     if (validUrl) {
       window.open(validUrl, '_blank');
     } else {
-      alert("لا يوجد رابط مسجل لهذا الطالب في الشيت!");
+      alert("لا يوجد رابط مسجل لهذا الطالب!");
     }
   }
 
@@ -211,6 +211,11 @@
     return { title: cleanTitle, maxScore: maxGrade };
   }
 
+  function extractStudentLink(student) {
+    if (!student) return "";
+    return student.profileLink || student.studentLink || student.link || student["رابط الطالب"] || student["رابط تقرير غياب الطالب"] || "";
+  }
+
   function searchStudents() {
     const rawQuery = document.getElementById("searchInput").value;
     const query = normalizeText(rawQuery);
@@ -232,8 +237,8 @@
       const sPhoneDigits = extractDigits(s.studentPhone);
       const pPhoneDigits = extractDigits(s.parentPhone);
 
-      const matchStudentPhone = queryDigits.length > 0 && sPhoneDigits.includes(queryDigits);
-      const matchParentPhone = queryDigits.length > 0 && pPhoneDigits.includes(queryDigits);
+      const matchStudentPhone = queryDigits.length >= 2 && sPhoneDigits.includes(queryDigits);
+      const matchParentPhone = queryDigits.length >= 2 && pPhoneDigits.includes(queryDigits);
 
       return matchName || matchStudentPhone || matchParentPhone;
     });
@@ -281,7 +286,8 @@
       });
     }
 
-    const absenceUrl = getValidUrl(student.profileLink);
+    const rawLink = extractStudentLink(student);
+    const absenceUrl = getValidUrl(rawLink);
     
     let absenceBtnHTML = "";
     if (absenceUrl) {
@@ -328,7 +334,8 @@
       });
     }
 
-    const absenceUrl = getValidUrl(currentStudent.profileLink);
+    const rawLink = extractStudentLink(currentStudent);
+    const absenceUrl = getValidUrl(rawLink);
     if (absenceUrl) {
       msg += `\n📌 *تقرير غياب الطالب:* ${absenceUrl}\n`;
     }
