@@ -189,23 +189,32 @@
   function parseGradeInfo(title, defaultMax, stage) {
     let cleanTitle = String(title || "").trim();
     
-    const ignoredKeywords = ["رقم الطالب", "تليفون الطالب", "هاتف الطالب", "رابط الطالب", "رابط تقرير غياب الطالب", "تليفون ولي الأمر", "رقم ولي الأمر"];
+    // استبعاد العناوين غير الخاصة بالدرجات
+    const ignoredKeywords = ["رقم الطالب", "تليفون الطالب", "هاتف الطالب", "رابط الطالب", "رابط تقرير غياب الطالب", "رابط صفحة الطالب", "تليفون ولي الأمر", "رقم ولي الأمر"];
     for (let keyword of ignoredKeywords) {
       if (cleanTitle.includes(keyword)) {
         return null;
       }
     }
 
-    let maxGrade = defaultMax;
+    // تحديد الدرجة الافتراضية بناءً على المرحلة الدراسية
+    let maxGrade = 25; // افتراضي المرحلة الإعدادية
+    const stageText = String(stage || "").trim();
+
+    if (stageText.includes("الأول الثانوي") || stageText.includes("الثاني الثانوي") || stageText.includes("١ث") || stageText.includes("٢ث")) {
+      maxGrade = 20;
+    } else if (stageText.includes("الثالث الثانوي") || stageText.includes("٣ث")) {
+      maxGrade = 40;
+    } else if (stageText.includes("إعدادي") || stageText.includes("ععدادي")) {
+      maxGrade = 25;
+    }
+
+    // إذا وُجدت درجة داخل أقواس في العنوان مثل: اختبار (15)
     const match = cleanTitle.match(/[\(\（]\s*([\d\.]+)\s*[\)\）]/);
 
     if (match) {
       maxGrade = parseFloat(match[1]);
       cleanTitle = cleanTitle.replace(/[\(\（]\s*[\d\.]+\s*[\)\）]/g, "").trim();
-    } else {
-      if (stage && stage.includes("الثالث الثانوي") && cleanTitle.includes("مراجعة")) {
-        maxGrade = 20;
-      }
     }
 
     return { title: cleanTitle, maxScore: maxGrade };
