@@ -18,8 +18,12 @@
     .container { max-width: 600px; margin: 0 auto; }
     .header { text-align: center; margin-bottom: 20px; }
     .header h2 { margin: 5px 0; color: var(--primary-color); }
-    .status-bar { font-size: 12px; color: #6c757d; text-align: center; margin-bottom: 15px; }
     
+    .status-container { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 15px; }
+    .status-bar { font-size: 12px; color: #6c757d; text-align: center; }
+    .btn-refresh-sync { background: none; border: none; cursor: pointer; font-size: 14px; padding: 2px 6px; border-radius: 4px; background-color: #e9ecef; color: #495057; }
+    .btn-refresh-sync:hover { background-color: #dee2e6; }
+
     #loginScreen, #appScreen, #reportScreen { background: var(--card-bg); padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
     .input-group { margin-bottom: 15px; }
     label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; }
@@ -53,7 +57,10 @@
 <div class="container">
   <div class="header">
     <h2>متابعة الطلاب</h2>
-    <div class="status-bar" id="syncStatus">جاري التحقق من البيانات...</div>
+    <div class="status-container">
+      <div class="status-bar" id="syncStatus">جاري التحقق من البيانات...</div>
+      <button type="button" class="btn-refresh-sync" onclick="forceSyncData()" title="تحديث البيانات من الشيت الآن">🔄 تحديث</button>
+    </div>
   </div>
 
   <!-- تسجيل الدخول -->
@@ -106,23 +113,30 @@
     }
   }
 
-  async function initData() {
+  function forceSyncData() {
+    localStorage.removeItem("students_cache");
+    localStorage.removeItem("last_sync_time");
+    updateStatus("جاري إعادة جلب البيانات فوراً...");
+    initData(true);
+  }
+
+  async function initData(isForce = false) {
     const cached = localStorage.getItem("students_cache");
     const lastSync = localStorage.getItem("last_sync_time");
 
-    if (cached) {
+    if (cached && !isForce) {
       try {
         studentsData = JSON.parse(cached);
         updateStatus("آخر مزامنة: " + (lastSync || "محلياً"));
       } catch(e) {
         localStorage.removeItem("students_cache");
       }
-    } else {
+    } else if (!isForce) {
       updateStatus("جاري جلب البيانات لأول مرة...");
     }
 
     try {
-      const response = await fetch(API_URL, {
+      const response = await fetch(API_URL + "?t=" + new Date().getTime(), {
         method: "GET",
         redirect: "follow",
         headers: { "Accept": "application/json" }
@@ -189,7 +203,6 @@
   function parseGradeInfo(title, defaultMax, stage) {
     let cleanTitle = String(title || "").trim();
     
-    // استبعاد العناوين غير الخاصة بالدرجات
     const ignoredKeywords = ["رقم الطالب", "تليفون الطالب", "هاتف الطالب", "رابط الطالب", "رابط تقرير غياب الطالب", "رابط صفحة الطالب", "تليفون ولي الأمر", "رقم ولي الأمر"];
     for (let keyword of ignoredKeywords) {
       if (cleanTitle.includes(keyword)) {
@@ -197,8 +210,7 @@
       }
     }
 
-    // تحديد الدرجة الافتراضية بناءً على المرحلة الدراسية
-    let maxGrade = 25; // افتراضي المرحلة الإعدادية
+    let maxGrade = 25;
     const stageText = String(stage || "").trim();
 
     if (stageText.includes("الأول الثانوي") || stageText.includes("الثاني الثانوي") || stageText.includes("١ث") || stageText.includes("٢ث")) {
@@ -209,7 +221,6 @@
       maxGrade = 25;
     }
 
-    // إذا وُجدت درجة داخل أقواس في العنوان مثل: اختبار (15)
     const match = cleanTitle.match(/[\(\（]\s*([\d\.]+)\s*[\)\）]/);
 
     if (match) {
@@ -313,11 +324,11 @@
         <div><strong>رقم الطالب:</strong> ${student.studentPhone || "غير مسجل"}</div>
         <div><strong>رقم ولي الأمر:</strong> ${student.parentPhone || "غير مسجل"}</div>
       </div>
-      
-      ${absenceBtnHTML}
 
       <h4 style="margin-bottom:10px; border-bottom:2px solid #0b5ed7; padding-bottom:5px;">درجات الاختبارات والواجبات:</h4>
       ${gradesHTML}
+
+      ${absenceBtnHTML}
 
       <div class="signature">مع تحيات أ. محمد شحاتة (مدرس المواد الشرعية)</div>
     `;
