@@ -3,60 +3,103 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>متابعة الطلاب - تقرير الطالب</title>
+  <title>منصة الأستاذ محمد شحاتة - متابعة الطلاب</title>
   <style>
     :root {
-      --primary-color: #0b5ed7;
+      --primary-color: #1a365d;
+      --secondary-color: #2b6cb0;
+      --accent-color: #d69e2e;
       --whatsapp-color: #25d366;
-      --bg-color: #f4f6f9;
+      --bg-color: #f7fafc;
       --card-bg: #ffffff;
-      --text-color: #212529;
-      --border-color: #e0e0e0;
+      --text-color: #2d3748;
+      --border-color: #e2e8f0;
+      --success-bg: #c6f6d5;
+      --success-text: #22543d;
+      --warning-bg: #feebc8;
+      --warning-text: #744210;
+      --danger-bg: #fed7d7;
+      --danger-text: #742a2a;
     }
-    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
+    
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
     body { background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 15px; }
-    .container { max-width: 600px; margin: 0 auto; }
-    .header { text-align: center; margin-bottom: 20px; }
-    .header h2 { margin: 5px 0; color: var(--primary-color); }
+    .container { max-width: 650px; margin: 0 auto; }
     
-    .status-container { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 15px; }
-    .status-bar { font-size: 12px; color: #6c757d; text-align: center; }
-    .btn-refresh-sync { background: none; border: none; cursor: pointer; font-size: 14px; padding: 2px 6px; border-radius: 4px; background-color: #e9ecef; color: #495057; }
-    .btn-refresh-sync:hover { background-color: #dee2e6; }
+    /* Header & Branding */
+    .brand-header { text-align: center; margin-bottom: 20px; padding: 15px 10px; background: #fff; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.04); }
+    .brand-logo { max-width: 180px; height: auto; margin-bottom: 8px; }
+    .brand-header h2 { margin: 5px 0; color: var(--primary-color); font-size: 22px; font-weight: 800; }
+    .brand-subtitle { font-size: 13px; color: #718096; margin-top: 2px; }
 
-    #loginScreen, #appScreen, #reportScreen { background: var(--card-bg); padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .status-container { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px; }
+    .status-bar { font-size: 12px; color: #718096; text-align: center; background: #edf2f7; padding: 4px 12px; border-radius: 20px; }
+    .btn-refresh-sync { background: #e2e8f0; border: none; cursor: pointer; font-size: 12px; padding: 4px 10px; border-radius: 20px; color: #4a5568; font-weight: bold; transition: 0.2s; }
+    .btn-refresh-sync:hover { background-color: #cbd5e0; }
+
+    /* Cards Screens */
+    #loginScreen, #appScreen, #reportScreen { background: var(--card-bg); padding: 22px; border-radius: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid var(--border-color); }
+    
     .input-group { margin-bottom: 15px; }
-    label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; }
-    input[type="text"], input[type="password"] { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 15px; outline: none; }
-    button { width: 100%; padding: 12px; background: var(--primary-color); color: #fff; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
+    label { display: block; margin-bottom: 6px; font-weight: bold; font-size: 14px; color: #4a5568; }
+    input[type="text"], input[type="password"] { width: 100%; padding: 12px 14px; border: 1px solid var(--border-color); border-radius: 10px; font-size: 15px; outline: none; transition: 0.2s; background: #f8fafc; }
+    input[type="text"]:focus, input[type="password"]:focus { border-color: var(--secondary-color); background: #fff; box-shadow: 0 0 0 3px rgba(43, 108, 176, 0.1); }
     
-    .btn-whatsapp { background-color: var(--whatsapp-color); color: #fff; }
-    .btn-copy { background-color: #0dcaf0; color: #212529; }
-    .btn-back { background-color: #6c757d; }
+    button { width: 100%; padding: 12px; background: var(--primary-color); color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: bold; cursor: pointer; margin-bottom: 10px; transition: 0.2s; }
+    button:hover { opacity: 0.93; transform: translateY(-1px); }
 
-    .search-box { position: relative; margin-bottom: 15px; }
-    .student-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; margin-bottom: 10px; cursor: pointer; transition: 0.2s; }
-    .student-card:hover { border-color: var(--primary-color); }
-    .student-name { font-weight: bold; font-size: 17px; color: #111; }
-    .student-info { font-size: 14px; color: #555; margin-top: 4px; }
+    .btn-whatsapp { background-color: var(--whatsapp-color); color: #fff; font-size: 16px; }
+    .btn-copy { background-color: #3182ce; color: #fff; }
+    .btn-back { background-color: #718096; width: auto; padding: 8px 16px; font-size: 13px; margin-bottom: 15px; display: inline-flex; align-items: center; gap: 5px; }
+
+    /* Student Search List */
+    .student-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px; margin-bottom: 10px; cursor: pointer; transition: 0.2s; display: flex; justify-content: space-between; align-items: center; }
+    .student-card:hover { border-color: var(--secondary-color); transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+    .student-name { font-weight: bold; font-size: 16px; color: #1a202c; }
+    .student-info { font-size: 13px; color: #718096; margin-top: 4px; }
+    .student-badge { background: #ebf8ff; color: #2b6cb0; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; }
+
+    /* Report Layout */
+    .report-card-header { background: linear-gradient(135deg, #1a365d 0%, #2b6cb0 100%); color: white; border-radius: 12px; padding: 18px; margin-bottom: 18px; position: relative; overflow: hidden; }
+    .report-card-header h3 { margin: 0 0 10px 0; font-size: 20px; font-weight: 800; }
+    .student-meta { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; font-size: 13px; opacity: 0.95; }
     
-    .report-header { background: #eef4ff; border-radius: 8px; padding: 15px; margin-bottom: 15px; border-right: 4px solid var(--primary-color); }
-    .grade-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
-    .grade-title { font-size: 14px; font-weight: 500; }
-    .grade-val { font-weight: bold; font-size: 15px; color: #2c3e50; }
-    .no-grade { color: #d9534f; font-weight: normal; }
+    /* Performance Summary Card */
+    .perf-summary { background: #f7fafc; border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; margin-bottom: 18px; display: flex; justify-content: space-around; text-align: center; }
+    .perf-item { display: flex; flex-direction: column; }
+    .perf-val { font-size: 18px; font-weight: 800; color: var(--primary-color); }
+    .perf-lbl { font-size: 11px; color: #718096; margin-top: 2px; }
+
+    /* Grades Table/Rows */
+    .section-title { font-size: 15px; font-weight: 700; color: #2d3748; margin: 18px 0 10px 0; border-bottom: 2px solid #edf2f7; padding-bottom: 6px; display: flex; align-items: center; justify-content: space-between; }
     
-    .absence-btn { display: block; width: 100%; text-align: center; margin: 15px 0; background-color: #dc3545; color: #fff; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; border: none; font-size: 16px; text-decoration: none; }
-    .absence-btn:hover { background-color: #bb2d3b; }
-    .whatsapp-box { background: #f8f9fa; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-top: 15px; }
-    .signature { text-align: center; font-weight: bold; margin-top: 15px; padding-top: 10px; border-top: 1px dashed #ccc; color: #0b5ed7; }
+    .grade-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border-radius: 8px; margin-bottom: 6px; background: #f8fafc; border: 1px solid #edf2f7; }
+    .grade-title { font-size: 13px; font-weight: 600; color: #4a5568; }
+    
+    .score-badge { font-weight: 700; font-size: 13px; padding: 4px 10px; border-radius: 6px; display: inline-block; }
+    .score-excellent { background-color: var(--success-bg); color: var(--success-text); }
+    .score-good { background-color: var(--warning-bg); color: var(--warning-text); }
+    .score-poor { background-color: var(--danger-bg); color: var(--danger-text); }
+
+    .absence-btn { display: block; width: 100%; text-align: center; margin: 18px 0; background-color: #e53e3e; color: #fff; padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; border: none; font-size: 15px; text-decoration: none; transition: 0.2s; }
+    .absence-btn:hover { background-color: #c53030; }
+    
+    .whatsapp-box { background: #f7fafc; border: 1px solid var(--border-color); border-radius: 12px; padding: 15px; margin-top: 20px; }
+    .signature { text-align: center; font-weight: bold; margin-top: 20px; padding-top: 12px; border-top: 1px dashed #cbd5e0; color: var(--primary-color); font-size: 13px; }
   </style>
 </head>
 <body>
 
 <div class="container">
-  <div class="header">
-    <h2>متابعة الطلاب</h2>
+  <!-- Brand Header -->
+  <div class="brand-header">
+    <!-- SVG Logo Fallback / Branded Logo Header -->
+    <svg class="brand-logo" viewBox="0 0 300 100" width="180" height="60" xmlns="http://www.w3.org/2000/svg">
+      <text x="50%" y="45%" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="#1a365d">محمد شحاتة</text>
+      <text x="50%" y="75%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#718096" letter-spacing="2">Mohamed Shehata</text>
+    </svg>
+    <h2>منصة متابعة الطلاب</h2>
+    <div class="brand-subtitle">مدرس المواد الشرعية</div>
     <div class="status-container">
       <div class="status-bar" id="syncStatus">جاري التحقق من البيانات...</div>
       <button type="button" class="btn-refresh-sync" onclick="forceSyncData()" title="تحديث البيانات من الشيت الآن">🔄 تحديث</button>
@@ -66,18 +109,18 @@
   <!-- تسجيل الدخول -->
   <div id="loginScreen">
     <div class="input-group">
-      <label>كلمة المرور للوصول:</label>
+      <label>🔒 كلمة المرور للوصول:</label>
       <input type="password" id="pinInput" placeholder="أدخل كلمة المرور (1234)">
     </div>
-    <button onclick="checkPin()">دخول</button>
+    <button onclick="checkPin()">دخول المنصة</button>
   </div>
 
   <!-- شاشة البحث -->
   <div id="appScreen" style="display: none;">
     <div class="search-box">
-      <input type="text" id="searchInput" oninput="searchStudents()" placeholder="ابحث باسم الطالب، رقم الطالب، أو رقم ولي الأمر...">
+      <input type="text" id="searchInput" oninput="searchStudents()" placeholder="🔍 ابحث باسم الطالب، رقم الطالب، أو رقم ولي الأمر...">
     </div>
-    <div id="resultsList"></div>
+    <div id="resultsList" style="margin-top: 15px;"></div>
   </div>
 
   <!-- شاشة التقرير -->
@@ -200,17 +243,25 @@
     }
   }
 
+  /* قائمة الكلمات المستبعدة تماماً لضمان عدم ظهور البيانات الشخصية كواجبات أو درجات */
+  const EXCLUDED_FIELDS = [
+    "رقم الطالب", "تليفون الطالب", "هاتف الطالب", "رابط الطالب", 
+    "رابط تقرير غياب الطالب", "رابط صفحة الطالب", "تليفون ولي الأمر", 
+    "رقم ولي الأمر", "العنوان", "الملاحظات", "تاريخ التسجيل", "النوع", 
+    "الحالة", "الرقم القومي", "الكود", "ملاحظات"
+  ];
+
   function parseGradeInfo(title, defaultMax, stage) {
     let cleanTitle = String(title || "").trim();
     
-    const ignoredKeywords = ["رقم الطالب", "تليفون الطالب", "هاتف الطالب", "رابط الطالب", "رابط تقرير غياب الطالب", "رابط صفحة الطالب", "تليفون ولي الأمر", "رقم ولي الأمر"];
-    for (let keyword of ignoredKeywords) {
-      if (cleanTitle.includes(keyword)) {
+    // استبعاد الأعمدة التي تسبب تداخلاً
+    for (let keyword of EXCLUDED_FIELDS) {
+      if (cleanTitle.toLowerCase().includes(keyword.toLowerCase())) {
         return null;
       }
     }
 
-    let maxGrade = 25;
+    let maxGrade = 25; // الافتراضي للإعدادي
     const stageText = String(stage || "").trim();
 
     if (stageText.includes("الأول الثانوي") || stageText.includes("الثاني الثانوي") || stageText.includes("١ث") || stageText.includes("٢ث")) {
@@ -221,6 +272,7 @@
       maxGrade = 25;
     }
 
+    // استخراج الدرجة العظمى بين القوسين إن وجدت في عنوان العمود
     const match = cleanTitle.match(/[\(\（]\s*([\d\.]+)\s*[\)\）]/);
 
     if (match) {
@@ -246,7 +298,7 @@
     if (query.length < 1) return;
 
     if (!studentsData || studentsData.length === 0) {
-      resultsContainer.innerHTML = "<div style='text-align:center; color:#d9534f; margin-top:10px;'>جاري تحميل البيانات... يرجى الانتظار ثوانٍ ثم المحاولة</div>";
+      resultsContainer.innerHTML = "<div style='text-align:center; color:#e53e3e; margin-top:10px;'>جاري تحميل البيانات... يرجى الانتظار ثوانٍ ثم المحاولة</div>";
       return;
     }
 
@@ -264,7 +316,7 @@
     });
 
     if (filtered.length === 0) {
-      resultsContainer.innerHTML = "<div style='text-align:center; color:#777; margin-top:10px;'>لا توجد نتائج مطابقة</div>";
+      resultsContainer.innerHTML = "<div style='text-align:center; color:#718096; margin-top:10px;'>لا توجد نتائج مطابقة</div>";
       return;
     }
 
@@ -273,8 +325,11 @@
       card.className = "student-card";
       card.onclick = () => renderReport(student);
       card.innerHTML = `
-        <div class="student-name">${student.name}</div>
-        <div class="student-info">المرحلة: ${student.stage} | المجموعة: ${student.group || "غير محددة"}</div>
+        <div>
+          <div class="student-name">${student.name}</div>
+          <div class="student-info">المرحلة: ${student.stage}</div>
+        </div>
+        <div class="student-badge">${student.group || "المجموعة العامة"}</div>
       `;
       resultsContainer.appendChild(card);
     });
@@ -289,48 +344,99 @@
     document.getElementById("customPhoneInput").value = defaultPhone;
 
     let gradesHTML = "";
+    let totalObtained = 0;
+    let totalMax = 0;
+    let testsCount = 0;
+
     if (student.grades && Array.isArray(student.grades)) {
       student.grades.forEach(g => {
         const parsed = parseGradeInfo(g.title, g.maxScore, student.stage);
         if (parsed) {
-          const isNoGrade = (g.score === "لا يوجد درجة" || g.score === "" || g.score === null);
-          const displayScore = isNoGrade ? `<span class="no-grade">لا يوجد درجة</span>` : `${g.score} / ${parsed.maxScore}`;
-          
+          const isNoGrade = (g.score === "لا يوجد درجة" || g.score === "" || g.score === null || g.score === undefined);
+          let badgeClass = "score-poor";
+          let displayScore = "";
+
+          if (isNoGrade) {
+            displayScore = "لا يوجد درجة";
+          } else {
+            const numScore = parseFloat(g.score);
+            if (!isNaN(numScore)) {
+              totalObtained += numScore;
+              totalMax += parsed.maxScore;
+              testsCount++;
+              
+              const ratio = numScore / parsed.maxScore;
+              if (ratio >= 0.85) badgeClass = "score-excellent";
+              else if (ratio >= 0.65) badgeClass = "score-good";
+              else badgeClass = "score-poor";
+
+              displayScore = `${numScore} / ${parsed.maxScore}`;
+            } else {
+              displayScore = g.score;
+            }
+          }
+
           gradesHTML += `
             <div class="grade-row">
               <span class="grade-title">${parsed.title}</span>
-              <span class="grade-val">${displayScore}</span>
+              <span class="score-badge ${badgeClass}">${displayScore}</span>
             </div>
           `;
         }
       });
     }
 
+    const percentage = totalMax > 0 ? Math.round((totalObtained / totalMax) * 100) : 0;
+    
+    // Performance Summary HTML
+    const summaryHTML = testsCount > 0 ? `
+      <div class="perf-summary">
+        <div class="perf-item">
+          <span class="perf-val">${totalObtained} / ${totalMax}</span>
+          <span class="perf-lbl">المجموع الكلي</span>
+        </div>
+        <div class="perf-item">
+          <span class="perf-val">${percentage}%</span>
+          <span class="perf-lbl">النسبة المئوية</span>
+        </div>
+        <div class="perf-item">
+          <span class="perf-val">${testsCount}</span>
+          <span class="perf-lbl">عدد الاختبارات</span>
+        </div>
+      </div>
+    ` : '';
+
     const rawLink = extractStudentLink(student);
     const absenceUrl = getValidUrl(rawLink);
     
     let absenceBtnHTML = "";
     if (absenceUrl) {
-      absenceBtnHTML = `<button type="button" class="absence-btn" onclick="openLink('${absenceUrl}')">📌 تقرير غياب الطالب</button>`;
+      absenceBtnHTML = `<button type="button" class="absence-btn" onclick="openLink('${absenceUrl}')">📌 تقرير غياب الطالب التفصيلي</button>`;
     } else {
-      absenceBtnHTML = `<button type="button" class="absence-btn" style="background-color:#ccc; cursor:not-allowed;" onclick="alert('لا يوجد رابط غياب مسجل لهذا الطالب في الشيت')">📌 تقرير غياب الطالب (غير متوفر)</button>`;
+      absenceBtnHTML = `<button type="button" class="absence-btn" style="background-color:#a0aec0; cursor:not-allowed;" onclick="alert('لا يوجد رابط غياب مسجل لهذا الطالب')">📌 تقرير غياب الطالب (غير متوفر)</button>`;
     }
 
     document.getElementById("reportContent").innerHTML = `
-      <div class="report-header">
-        <h3 style="margin:0 0 8px 0; font-size:20px;">${student.name}</h3>
-        <div><strong>المرحلة:</strong> ${student.stage}</div>
-        <div><strong>المجموعة:</strong> ${student.group || "غير محددة"}</div>
-        <div><strong>رقم الطالب:</strong> ${student.studentPhone || "غير مسجل"}</div>
-        <div><strong>رقم ولي الأمر:</strong> ${student.parentPhone || "غير مسجل"}</div>
+      <div class="report-card-header">
+        <h3>${student.name}</h3>
+        <div class="student-meta">
+          <div>📖 <strong>المرحلة:</strong> ${student.stage}</div>
+          <div>👥 <strong>المجموعة:</strong> ${student.group || "غير محددة"}</div>
+          <div>📱 <strong>هاتف الطالب:</strong> ${student.studentPhone || "غير مسجل"}</div>
+          <div>📞 <strong>ولي الأمر:</strong> ${student.parentPhone || "غير مسجل"}</div>
+        </div>
       </div>
 
-      <h4 style="margin-bottom:10px; border-bottom:2px solid #0b5ed7; padding-bottom:5px;">درجات الاختبارات والواجبات:</h4>
-      ${gradesHTML}
+      ${summaryHTML}
+
+      <div class="section-title">
+        <span>سجل الاختبارات والواجبات</span>
+      </div>
+      ${gradesHTML || '<div style="text-align:center; color:#718096;">لا توجد درجات مسجلة</div>'}
 
       ${absenceBtnHTML}
 
-      <div class="signature">مع تحيات أ. محمد شحاتة (مدرس المواد الشرعية)</div>
+      <div class="signature">مع تحيات أ. محمد شحاتة - مدرس المواد الشرعية</div>
     `;
   }
 
@@ -344,20 +450,37 @@
     msg += `-----------------------------------\n`;
     msg += `📊 *تفاصيل الدرجات والواجبات:*\n\n`;
 
+    let totalObtained = 0;
+    let totalMax = 0;
+
     if (currentStudent.grades && Array.isArray(currentStudent.grades)) {
       currentStudent.grades.forEach(g => {
         const parsed = parseGradeInfo(g.title, g.maxScore, currentStudent.stage);
         if (parsed) {
-          const isNoGrade = (g.score === "لا يوجد درجة" || g.score === "" || g.score === null);
-          msg += `• ${parsed.title}: ${isNoGrade ? 'لا يوجد درجة' : g.score + ' / ' + parsed.maxScore}\n`;
+          const isNoGrade = (g.score === "لا يوجد درجة" || g.score === "" || g.score === null || g.score === undefined);
+          if (!isNoGrade) {
+            const numScore = parseFloat(g.score);
+            if (!isNaN(numScore)) {
+              totalObtained += numScore;
+              totalMax += parsed.maxScore;
+            }
+            msg += `• ${parsed.title}: ${g.score} / ${parsed.maxScore}\n`;
+          } else {
+            msg += `• ${parsed.title}: لا يوجد درجة ❌\n`;
+          }
         }
       });
+    }
+
+    if (totalMax > 0) {
+      const percentage = Math.round((totalObtained / totalMax) * 100);
+      msg += `\n📈 *المجموع الكلي:* ${totalObtained} / ${totalMax} (${percentage}%)\n`;
     }
 
     const rawLink = extractStudentLink(currentStudent);
     const absenceUrl = getValidUrl(rawLink);
     if (absenceUrl) {
-      msg += `\n📌 *تقرير غياب الطالب:* ${absenceUrl}\n`;
+      msg += `\n📌 *رابط تقرير غياب الطالب:* ${absenceUrl}\n`;
     }
 
     msg += `\nمع تحيات أ. محمد شحاتة (مدرس المواد الشرعية)`;
