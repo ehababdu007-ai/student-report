@@ -24,7 +24,6 @@
       --input-bg: #f8fafc;
     }
 
-    /* الوضع الليلي التلقائي */
     @media (prefers-color-scheme: dark) {
       :root {
         --bg-color: #1a202c;
@@ -108,12 +107,8 @@
     .whatsapp-box { background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 15px; margin-top: 20px; }
     .signature { text-align: center; font-weight: bold; margin-top: 20px; padding-top: 12px; border-top: 1px dashed var(--border-color); color: var(--primary-color); font-size: 13px; }
 
-    /* Spinner */
-    .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: middle; margin-left: 6px; }
-    @keyframes spin { to { transform: rotate(360deg); } }
     .loading-msg { text-align: center; color: var(--muted-color); padding: 20px; font-size: 14px; }
 
-    /* الطباعة */
     @media print {
       .btn-back, .whatsapp-box, .absence-btn, button, .status-container, .brand-subtitle { display: none !important; }
       body { background: white; padding: 0; }
@@ -166,8 +161,7 @@
 <script>
   // ============ الإعدادات ============
   const API_URL = "https://script.google.com/macros/s/AKfycbw7TDCj4Mod9VkpCsoJYG5DZJR1kPBJGKyJ2UjPBa4rppuUgJScWO8-TJfn-osJpLda/exec";
-  // إذا فعّلت المفتاح السري في Code.gs، أضفه هنا:
-  const API_KEY = ""; // مثال: "mySecretKey123"
+  const API_KEY = "";
   // ===================================
 
   let studentsData = [];
@@ -202,42 +196,63 @@
     try {
       const url = API_URL + (API_KEY ? "?key=" + encodeURIComponent(API_KEY) + "&t=" : "?t=") + new Date().getTime();
 
+      console.log("🔵 [1] محاولة الاتصال بـ:", url);
+      updateStatus("جاري الاتصال بالخادم...");
+
       const response = await fetch(url, {
         method: "GET",
         redirect: "follow",
         headers: { "Accept": "application/json" }
       });
 
-      const data = await response.json();
+      console.log("🟢 [2] حالة الاستجابة:", response.status, response.statusText);
+      updateStatus("تم الاتصال، جاري قراءة البيانات...");
+
+      const text = await response.text();
+      console.log("📦 [3] أول 300 حرف من الاستجابة:", text.substring(0, 300));
+
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch(e) {
+        console.error("❌ [4] الاستجابة ليست JSON. قد تكون صفحة تسجيل دخول Google أو خطأ.");
+        updateStatus("❌ الخادم أرجع رداً غير متوقع. اضغط F12 وافتح Console");
+        return;
+      }
 
       if (data && data.error) {
-        updateStatus("خطأ من الخادم: " + data.error);
+        console.error("❌ [5] خطأ من الخادم:", data.error);
+        updateStatus("❌ خطأ من الخادم: " + data.error);
         return;
       }
 
       if (data && data.students && Array.isArray(data.students)) {
         studentsData = data.students;
         const now = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
-        
+
         try {
           localStorage.setItem("students_cache", JSON.stringify(studentsData));
           localStorage.setItem("last_sync_time", now);
         } catch(e) {
-          console.warn("Cache full, skipping:", e);
+          console.warn("⚠️ Cache full:", e);
         }
-        
-        updateStatus("تمت المزامنة بنجاح الساعة " + now);
+
+        console.log("✅ [6] نجح! عدد الطلاب:", studentsData.length);
+        updateStatus("✅ تمت المزامنة (" + studentsData.length + " طالب) - " + now);
 
         if (document.getElementById("searchInput").value.trim() !== "") {
           searchStudents();
         }
+      } else {
+        console.warn("⚠️ [7] الاستجابة لا تحتوي على students:", data);
+        updateStatus("⚠️ الاستجابة لا تحتوي على بيانات طلاب");
       }
     } catch (err) {
-      console.error("Fetch Error:", err);
+      console.error("❌ [8] خطأ الاتصال:", err);
       if (studentsData.length > 0) {
         updateStatus("وضع أوفلاين (تعذر الاتصال بالشبكة)");
       } else {
-        updateStatus("خطأ في جلب البيانات، يرجى التوصيل بالإنترنت.");
+        updateStatus("❌ خطأ: " + err.message);
       }
     }
   }
@@ -251,12 +266,6 @@
     return String(val).replace(/\D/g, "");
   }
 
-  /**
-   * تطبيع النص العربي للبحث:
-   * - توحيد الهمزات (أ إ آ → ا)
-   * - توحيد الياء (ى → ي)
-   * - توحيد التاء المربوطة (ة → ه)
-   */
   function normalizeArabic(text) {
     if (!text) return "";
     return String(text)
@@ -299,14 +308,12 @@
   function parseGradeInfo(title, stage) {
     let cleanTitle = String(title || "").trim();
 
-    // تجاهل الأعمدة غير الأكاديمية
     for (let keyword of EXCLUDED_FIELDS) {
       if (cleanTitle.toLowerCase().includes(keyword.toLowerCase())) {
         return null;
       }
     }
 
-    // الدرجة الافتراضية حسب المرحلة
     let maxGrade = 25;
     const stageText = String(stage || "").trim();
 
@@ -319,14 +326,12 @@
       maxGrade = 25;
     }
 
-    // إذا كان العنوان يحتوي (رقم) مثل "الاختبار (20)"
     const match = cleanTitle.match(/[\(\（]\s*([\d\.]+)\s*[\)\）]/);
     if (match) {
       maxGrade = parseFloat(match[1]);
       cleanTitle = cleanTitle.replace(/[\(\（]\s*[\d\.]+\s*[\)\）]/g, "").trim();
     }
 
-    // تجاهل العناوين الفارغة أو الطويلة جداً (غالباً ليست درجات)
     if (!cleanTitle || cleanTitle.length > 60) return null;
 
     return { title: cleanTitle, maxScore: maxGrade };
@@ -342,7 +347,7 @@
     if (query.length < 1 && queryDigits.length < 2) return;
 
     if (!studentsData || studentsData.length === 0) {
-      resultsContainer.innerHTML = "<div class='loading-msg'>جاري تحميل البيانات... يرجى الانتظار ثوانٍ ثم المحاولة</div>";
+      resultsContainer.innerHTML = "<div class='loading-msg'>جاري تحميل البيانات... يرجى الانتظار</div>";
       return;
     }
 
@@ -379,9 +384,6 @@
     });
   }
 
-  /**
-   * حماية بسيطة من XSS عند عرض بيانات من الشيت
-   */
   function escapeHtml(str) {
     if (str === null || str === undefined) return "";
     return String(str)
@@ -484,4 +486,119 @@
       <div class="section-title">
         <span>سجل الاختبارات والواجبات</span>
       </div>
-      ${gradesHTML
+      ${gradesHTML || '<div style="text-align:center; color:var(--muted-color);">لا توجد درجات مسجلة</div>'}
+
+      <button type="button" class="absence-btn" id="absenceBtn" ${hasAbsenceUrl ? '' : 'disabled'}>
+        📌 ${hasAbsenceUrl ? 'تقرير غياب الطالب التفصيلي' : 'تقرير غياب الطالب (غير متوفر)'}
+      </button>
+
+      <div class="signature">مع تحيات أ. محمد شحاتة - مدرس المواد الشرعية</div>
+    `;
+
+    const absenceBtn = document.getElementById("absenceBtn");
+    if (absenceBtn && hasAbsenceUrl) {
+      absenceBtn.addEventListener("click", () => openLink(absenceUrl));
+    }
+  }
+
+  function buildMessageText() {
+    if (!currentStudent) return "";
+
+    let msg = `*تقرير متابعة الطالب*\n`;
+    msg += `👤 *الاسم:* ${currentStudent.name}\n`;
+    msg += `📚 *المرحلة:* ${currentStudent.stage}\n`;
+    msg += `👥 *المجموعة:* ${currentStudent.group || 'غير محددة'}\n`;
+    msg += `-----------------------------------\n`;
+    msg += `📊 *تفاصيل الدرجات والواجبات:*\n\n`;
+
+    let totalObtained = 0;
+    let totalMax = 0;
+
+    if (currentStudent.grades && Array.isArray(currentStudent.grades)) {
+      currentStudent.grades.forEach(g => {
+        const parsed = parseGradeInfo(g.title, currentStudent.stage);
+        if (parsed) {
+          const isNoGrade = (g.score === "لا يوجد درجة" || g.score === "" ||
+                             g.score === null || g.score === undefined);
+          if (!isNoGrade) {
+            const numScore = parseFloat(g.score);
+            if (!isNaN(numScore)) {
+              totalObtained += numScore;
+              totalMax += parsed.maxScore;
+              const pct = Math.round((numScore / parsed.maxScore) * 100);
+              const emoji = pct >= 85 ? '🌟' : pct >= 65 ? '👍' : '⚠️';
+              msg += `• ${parsed.title}: ${numScore}/${parsed.maxScore} (${pct}%) ${emoji}\n`;
+            } else {
+              msg += `• ${parsed.title}: ${g.score}\n`;
+            }
+          } else {
+            msg += `• ${parsed.title}: لا يوجد درجة ❌\n`;
+          }
+        }
+      });
+    }
+
+    if (totalMax > 0) {
+      const percentage = Math.round((totalObtained / totalMax) * 100);
+      msg += `\n📈 *المجموع الكلي:* ${totalObtained} / ${totalMax} (${percentage}%)\n`;
+    }
+
+    msg += `\n📌 *لمتابعة الحضور والغياب بشكل لحظي:*\nيرجى طلب بيانات حسابكم الخاصة من إدارة السنتر والدخول عبر المنصة:\n🔗 https://alameed.center/\n`;
+    msg += `\nمع تحيات أ. محمد شحاتة (مدرس المواد الشرعية)`;
+    return msg;
+  }
+
+  function sendWhatsappReport() {
+    const inputPhone = document.getElementById("customPhoneInput").value.trim();
+    let targetPhone = extractDigits(inputPhone);
+
+    if (!targetPhone) {
+      alert("يرجى إدخال رقم هاتف صحيح للإرسال!");
+      return;
+    }
+
+    if (targetPhone.startsWith("0")) targetPhone = "2" + targetPhone;
+    if (!targetPhone.startsWith("20")) targetPhone = "20" + targetPhone;
+
+    const msgText = buildMessageText();
+    const encodedMsg = encodeURIComponent(msgText);
+    window.open(`https://wa.me/${targetPhone}?text=${encodedMsg}`, '_blank');
+  }
+
+  function copyReportText() {
+    const msgText = buildMessageText();
+    if (!msgText) return;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(msgText).then(() => {
+        alert("تم نسخ نص التقرير بنجاح!");
+      }).catch(() => {
+        fallbackCopyText(msgText);
+      });
+    } else {
+      fallbackCopyText(msgText);
+    }
+  }
+
+  function fallbackCopyText(text) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+      document.execCommand('copy');
+      alert("تم نسخ نص التقرير بنجاح!");
+    } catch (err) {
+      alert("عذراً، فشل النسخ التلقائي.");
+    }
+    document.body.removeChild(textArea);
+  }
+
+  function showAppScreen() {
+    document.getElementById("reportScreen").style.display = "none";
+    document.getElementById("appScreen").style.display = "block";
+  }
+</script>
+</body>
+</html>
