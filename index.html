@@ -53,7 +53,7 @@
     .container { max-width: 650px; margin: 0 auto; }
 
     .brand-header { text-align: center; margin-bottom: 20px; padding: 15px 10px; background: var(--card-bg); border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.04); }
-    .brand-logo { max-width: 180px; height: auto; margin-bottom: 8px; }
+    .brand-logo { max-width: 200px; height: auto; margin-bottom: 8px; }
     .brand-header h2 { margin: 5px 0; color: var(--primary-color); font-size: 22px; font-weight: 800; }
     .brand-subtitle { font-size: 13px; color: var(--muted-color); margin-top: 2px; }
 
@@ -65,11 +65,12 @@
     #appScreen, #reportScreen { background: var(--card-bg); padding: 22px; border-radius: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid var(--border-color); }
 
     .input-group { margin-bottom: 15px; }
-    label { display: block; margin-bottom: 6px; font-weight: bold; font-size: 14px; color: var(--muted-color); }
+    label { display: block; margin-bottom: 6px; font-weight: bold; font-size: 13px; color: var(--muted-color); }
     input[type="text"], select { width: 100%; padding: 12px 14px; border: 1px solid var(--border-color); border-radius: 10px; font-size: 15px; outline: none; transition: 0.2s; background: var(--input-bg); color: var(--text-color); font-family: inherit; }
     input[type="text"]:focus, select:focus { border-color: var(--secondary-color); box-shadow: 0 0 0 3px rgba(43, 108, 176, 0.1); }
 
     .filter-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+    .search-box { margin-top: 5px; }
 
     button { width: 100%; padding: 12px; background: var(--primary-color); color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: bold; cursor: pointer; margin-bottom: 10px; transition: 0.2s; }
     button:hover { opacity: 0.93; transform: translateY(-1px); }
@@ -114,8 +115,8 @@
     .signature { text-align: center; font-weight: bold; margin-top: 20px; padding-top: 12px; border-top: 1px dashed var(--border-color); color: var(--primary-color); font-size: 13px; }
 
     .loading-msg { text-align: center; color: var(--muted-color); padding: 20px; font-size: 14px; }
+    .results-header { font-size: 13px; color: var(--muted-color); margin-bottom: 8px; padding: 0 4px; }
 
-    /* شاشة انتظار عند تصدير PNG */
     .export-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 9999; color: #fff; font-size: 16px; font-weight: bold; }
     .export-overlay.active { display: flex; }
 
@@ -133,10 +134,10 @@
 
 <div class="container">
   <div class="brand-header">
-    <svg class="brand-logo" viewBox="0 0 300 120" width="200" height="80" xmlns="http://www.w3.org/2000/svg">
-      <text x="50%" y="35%" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-size="26" font-weight="bold" fill="#1a365d">محمد شحاتة</text>
-      <text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#718096" letter-spacing="2">Mohamed Shehata</text>
-      <text x="50%" y="80%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="600" fill="#2b6cb0">مدرس المواد الشرعية</text>
+    <svg class="brand-logo" viewBox="0 0 300 130" width="220" height="95" xmlns="http://www.w3.org/2000/svg">
+      <text x="50%" y="30%" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-size="26" font-weight="bold" fill="#1a365d">محمد شحاتة</text>
+      <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#718096" letter-spacing="2">Mohamed Shehata</text>
+      <text x="50%" y="75%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="600" fill="#2b6cb0">مدرس المواد الشرعية</text>
     </svg>
     <h2>منصة متابعة الطلاب</h2>
     <div class="status-container">
@@ -206,12 +207,6 @@
     initData(true);
   }
 
-  /**
-   * استراتيجية "Cache First, Background Sync":
-   * 1. اعرض الكاش فوراً (سرعة فورية)
-   * 2. اجلب بيانات جديدة في الخلفية بصمت
-   * 3. حدّث الواجهة تلقائياً إذا تغيرت
-   */
   async function initData(isForce = false) {
     const cached = localStorage.getItem("students_cache");
 
@@ -220,7 +215,7 @@
       try {
         studentsData = JSON.parse(cached);
         buildFilters();
-        updateStatus("✅ البيانات جاهزة (قابلة للتحديث تلقائياً)");
+        updateStatus("✅ البيانات جاهزة");
       } catch(e) {
         localStorage.removeItem("students_cache");
       }
@@ -246,7 +241,7 @@
       try {
         data = JSON.parse(text);
       } catch(e) {
-        console.error("❌ الاستجابة ليست JSON");
+        console.error("❌ الاستجابة ليست JSON. أول 200 حرف:", text.substring(0, 200));
         if (studentsData.length === 0) {
           updateStatus("❌ تعذر قراءة بيانات الخادم");
         } else {
@@ -278,6 +273,7 @@
           console.warn("⚠️ Cache full:", e);
         }
 
+        console.log("✅ تمت المزامنة، عدد الطلاب:", studentsData.length);
         updateStatus("✅ تمت المزامنة الساعة " + now);
 
         // تحديث النتائج إن كان هناك بحث نشط
@@ -286,6 +282,11 @@
         const currentGroup = document.getElementById("groupFilter").value;
         if (currentQuery || currentStage || currentGroup) {
           searchStudents();
+        }
+      } else {
+        console.warn("⚠️ الاستجابة لا تحتوي على students");
+        if (studentsData.length === 0) {
+          updateStatus("⚠️ لا توجد بيانات");
         }
       }
     } catch (err) {
@@ -446,6 +447,14 @@
       return;
     }
 
+    // عرض عدد النتائج لو كانت كبيرة
+    if (filtered.length > 20) {
+      const header = document.createElement("div");
+      header.className = "results-header";
+      header.textContent = `عدد النتائج: ${filtered.length} — استخدم البحث لتضييق النتائج`;
+      resultsContainer.appendChild(header);
+    }
+
     filtered.forEach(student => {
       const card = document.createElement("div");
       card.className = "student-card";
@@ -602,4 +611,136 @@
             if (!isNaN(numScore)) {
               totalObtained += numScore;
               totalMax += parsed.maxScore;
-              const p
+              const pct = Math.round((numScore / parsed.maxScore) * 100);
+              const emoji = pct >= 85 ? '🌟' : pct >= 65 ? '👍' : '⚠️';
+              msg += `• ${parsed.title}: ${numScore}/${parsed.maxScore} (${pct}%) ${emoji}\n`;
+            } else {
+              msg += `• ${parsed.title}: ${g.score}\n`;
+            }
+          } else {
+            msg += `• ${parsed.title}: لا يوجد درجة ❌\n`;
+          }
+        }
+      });
+    }
+
+    if (totalMax > 0) {
+      const percentage = Math.round((totalObtained / totalMax) * 100);
+      msg += `\n📈 *المجموع الكلي:* ${totalObtained} / ${totalMax} (${percentage}%)\n`;
+    }
+
+    msg += `\n📌 *لمتابعة الحضور والغياب بشكل لحظي:*\nيرجى طلب بيانات حسابكم الخاصة من إدارة السنتر والدخول عبر المنصة:\n🔗 https://alameed.center/\n`;
+    msg += `\nمع تحيات أ. محمد شحاتة (مدرس المواد الشرعية)`;
+    return msg;
+  }
+
+  function sendWhatsappReport() {
+    const inputPhone = document.getElementById("customPhoneInput").value.trim();
+    let targetPhone = extractDigits(inputPhone);
+
+    if (!targetPhone) {
+      alert("يرجى إدخال رقم هاتف صحيح للإرسال!");
+      return;
+    }
+
+    if (targetPhone.startsWith("0")) targetPhone = "2" + targetPhone;
+    if (!targetPhone.startsWith("20")) targetPhone = "20" + targetPhone;
+
+    const msgText = buildMessageText();
+    const encodedMsg = encodeURIComponent(msgText);
+    window.open(`https://wa.me/${targetPhone}?text=${encodedMsg}`, '_blank');
+  }
+
+  function copyReportText() {
+    const msgText = buildMessageText();
+    if (!msgText) return;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(msgText).then(() => {
+        alert("تم نسخ نص التقرير بنجاح!");
+      }).catch(() => {
+        fallbackCopyText(msgText);
+      });
+    } else {
+      fallbackCopyText(msgText);
+    }
+  }
+
+  function fallbackCopyText(text) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+      document.execCommand('copy');
+      alert("تم نسخ نص التقرير بنجاح!");
+    } catch (err) {
+      alert("عذراً، فشل النسخ التلقائي.");
+    }
+    document.body.removeChild(textArea);
+  }
+
+  function showAppScreen() {
+    document.getElementById("reportScreen").style.display = "none";
+    document.getElementById("appScreen").style.display = "block";
+  }
+
+  /**
+   * تصدير التقرير كصورة PNG
+   */
+  async function exportReportAsPng() {
+    if (!currentStudent) return;
+
+    const overlay = document.getElementById("exportOverlay");
+    overlay.classList.add("active");
+
+    try {
+      const reportElement = document.getElementById("reportContent");
+
+      // حفظ الحالة الأصلية
+      const originalBg = reportElement.style.background;
+      reportElement.style.background = getComputedStyle(document.body).backgroundColor;
+
+      const canvas = await html2canvas(reportElement, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: null,
+        logging: false,
+        windowWidth: reportElement.scrollWidth,
+        windowHeight: reportElement.scrollHeight
+      });
+
+      // استرجاع الحالة الأصلية
+      reportElement.style.background = originalBg;
+
+      // تحويل الكانفاس إلى رابط تحميل
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          alert("فشل إنشاء الصورة");
+          overlay.classList.remove("active");
+          return;
+        }
+
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        const safeName = (currentStudent.name || "student").replace(/[^\u0600-\u06FF\w\s-]/g, '').trim();
+        link.download = `تقرير-${safeName}.png`;
+        link.href = url;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        overlay.classList.remove("active");
+      }, "image/png", 0.95);
+
+    } catch (err) {
+      console.error("❌ خطأ تصدير PNG:", err);
+      alert("حدث خطأ أثناء إنشاء الصورة. حاول مرة أخرى.");
+      overlay.classList.remove("active");
+    }
+  }
+</script>
+</body>
+</html>
