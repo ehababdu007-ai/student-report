@@ -38,12 +38,12 @@
     .btn-refresh-sync:hover { background-color: #cbd5e0; }
 
     /* Cards Screens */
-    #loginScreen, #appScreen, #reportScreen { background: var(--card-bg); padding: 22px; border-radius: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid var(--border-color); }
+    #appScreen, #reportScreen { background: var(--card-bg); padding: 22px; border-radius: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid var(--border-color); }
     
     .input-group { margin-bottom: 15px; }
     label { display: block; margin-bottom: 6px; font-weight: bold; font-size: 14px; color: #4a5568; }
-    input[type="text"], input[type="password"] { width: 100%; padding: 12px 14px; border: 1px solid var(--border-color); border-radius: 10px; font-size: 15px; outline: none; transition: 0.2s; background: #f8fafc; }
-    input[type="text"]:focus, input[type="password"]:focus { border-color: var(--secondary-color); background: #fff; box-shadow: 0 0 0 3px rgba(43, 108, 176, 0.1); }
+    input[type="text"] { width: 100%; padding: 12px 14px; border: 1px solid var(--border-color); border-radius: 10px; font-size: 15px; outline: none; transition: 0.2s; background: #f8fafc; }
+    input[type="text"]:focus { border-color: var(--secondary-color); background: #fff; box-shadow: 0 0 0 3px rgba(43, 108, 176, 0.1); }
     
     button { width: 100%; padding: 12px; background: var(--primary-color); color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: bold; cursor: pointer; margin-bottom: 10px; transition: 0.2s; }
     button:hover { opacity: 0.93; transform: translateY(-1px); }
@@ -93,7 +93,6 @@
 <div class="container">
   <!-- Brand Header -->
   <div class="brand-header">
-    <!-- SVG Logo Fallback / Branded Logo Header -->
     <svg class="brand-logo" viewBox="0 0 300 100" width="180" height="60" xmlns="http://www.w3.org/2000/svg">
       <text x="50%" y="45%" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="#1a365d">محمد شحاتة</text>
       <text x="50%" y="75%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#718096" letter-spacing="2">Mohamed Shehata</text>
@@ -106,17 +105,8 @@
     </div>
   </div>
 
-  <!-- تسجيل الدخول -->
-  <div id="loginScreen">
-    <div class="input-group">
-      <label>🔒 كلمة المرور للوصول:</label>
-      <input type="password" id="pinInput" placeholder="أدخل كلمة المرور (1234)">
-    </div>
-    <button onclick="checkPin()">دخول المنصة</button>
-  </div>
-
-  <!-- شاشة البحث -->
-  <div id="appScreen" style="display: none;">
+  <!-- شاشة البحث (تفتح مباشرة) -->
+  <div id="appScreen">
     <div class="search-box">
       <input type="text" id="searchInput" oninput="searchStudents()" placeholder="🔍 ابحث باسم الطالب، رقم الطالب، أو رقم ولي الأمر...">
     </div>
@@ -141,20 +131,13 @@
 
 <script>
   const API_URL = "https://script.google.com/macros/s/AKfycbw7TDCj4Mod9VkpCsoJYG5DZJR1kPBJGKyJ2UjPBa4rppuUgJScWO8-TJfn-osJpLda/exec";
-  const DEFAULT_PIN = "1234";
   let studentsData = [];
   let currentStudent = null;
 
-  function checkPin() {
-    const pin = document.getElementById("pinInput").value;
-    if (pin === DEFAULT_PIN) {
-      document.getElementById("loginScreen").style.display = "none";
-      document.getElementById("appScreen").style.display = "block";
-      initData();
-    } else {
-      alert("كلمة المرور غير صحيحة!");
-    }
-  }
+  // تشغيل البيانات فور تحميل الصفحة مباشرة بدون رمز سري
+  window.addEventListener("DOMContentLoaded", () => {
+    initData();
+  });
 
   function forceSyncData() {
     localStorage.removeItem("students_cache");
@@ -221,7 +204,8 @@
     return String(text)
       .trim()
       .toLowerCase()
-      .replace(/[\u200B-\u200D\uFEFF]/g, '');
+      .replace(/[\u200B-\u200D\uFEFF]/g, '')
+      .replace(/\s+/g, ' ');
   }
 
   function getValidUrl(url) {
@@ -243,7 +227,6 @@
     }
   }
 
-  /* قائمة الكلمات المستبعدة تماماً لضمان عدم ظهور البيانات الشخصية كواجبات أو درجات */
   const EXCLUDED_FIELDS = [
     "رقم الطالب", "تليفون الطالب", "هاتف الطالب", "رابط الطالب", 
     "رابط تقرير غياب الطالب", "رابط صفحة الطالب", "تليفون ولي الأمر", 
@@ -254,14 +237,13 @@
   function parseGradeInfo(title, defaultMax, stage) {
     let cleanTitle = String(title || "").trim();
     
-    // استبعاد الأعمدة التي تسبب تداخلاً
     for (let keyword of EXCLUDED_FIELDS) {
       if (cleanTitle.toLowerCase().includes(keyword.toLowerCase())) {
         return null;
       }
     }
 
-    let maxGrade = 25; // الافتراضي للإعدادي
+    let maxGrade = 25;
     const stageText = String(stage || "").trim();
 
     if (stageText.includes("الأول الثانوي") || stageText.includes("الثاني الثانوي") || stageText.includes("١ث") || stageText.includes("٢ث")) {
@@ -272,7 +254,6 @@
       maxGrade = 25;
     }
 
-    // استخراج الدرجة العظمى بين القوسين إن وجدت في عنوان العمود
     const match = cleanTitle.match(/[\(\（]\s*([\d\.]+)\s*[\)\）]/);
 
     if (match) {
@@ -281,11 +262,6 @@
     }
 
     return { title: cleanTitle, maxScore: maxGrade };
-  }
-
-  function extractStudentLink(student) {
-    if (!student) return "";
-    return student.profileLink || student.studentLink || student.link || student["رابط الطالب"] || student["رابط تقرير غياب الطالب"] || "";
   }
 
   function searchStudents() {
@@ -388,7 +364,6 @@
 
     const percentage = totalMax > 0 ? Math.round((totalObtained / totalMax) * 100) : 0;
     
-    // Performance Summary HTML
     const summaryHTML = testsCount > 0 ? `
       <div class="perf-summary">
         <div class="perf-item">
@@ -406,8 +381,7 @@
       </div>
     ` : '';
 
-    const rawLink = extractStudentLink(student);
-    const absenceUrl = getValidUrl(rawLink);
+    const absenceUrl = getValidUrl(student.profileLink);
     
     let absenceBtnHTML = "";
     if (absenceUrl) {
@@ -424,6 +398,8 @@
           <div>👥 <strong>المجموعة:</strong> ${student.group || "غير محددة"}</div>
           <div>📱 <strong>هاتف الطالب:</strong> ${student.studentPhone || "غير مسجل"}</div>
           <div>📞 <strong>ولي الأمر:</strong> ${student.parentPhone || "غير مسجل"}</div>
+          <div>📍 <strong>العنوان:</strong> ${student.address || "غير مدخل"}</div>
+          <div>📅 <strong>تاريخ التسجيل:</strong> ${student.registrationDate || "غير مدخل"}</div>
         </div>
       </div>
 
@@ -477,11 +453,7 @@
       msg += `\n📈 *المجموع الكلي:* ${totalObtained} / ${totalMax} (${percentage}%)\n`;
     }
 
-    const rawLink = extractStudentLink(currentStudent);
-    const absenceUrl = getValidUrl(rawLink);
-    if (absenceUrl) {
-      msg += `\n📌 *رابط تقرير غياب الطالب:* ${absenceUrl}\n`;
-    }
+    msg += `\n📌 *لمتابعة الحضور والغياب بشكل لحظي:*\nيرجى طلب بيانات حسابكم الخاصة من إدارة السنتر والدخول عبر المنصة:\n🔗 https://alameed.center/\n`;
 
     msg += `\nمع تحيات أ. محمد شحاتة (مدرس المواد الشرعية)`;
     return msg;
