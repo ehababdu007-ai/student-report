@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>منصة الأستاذ محمد شحاتة - متابعة الطلاب</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
     :root {
       --primary-color: #1a365d;
@@ -40,10 +41,11 @@
       .perf-summary { background: #1a202c !important; }
       .status-bar { background: #4a5568 !important; color: #e2e8f0 !important; }
       .btn-refresh-sync { background: #4a5568 !important; color: #e2e8f0 !important; }
-      input[type="text"] { color: #e2e8f0 !important; }
+      input[type="text"], select { color: #e2e8f0 !important; }
       .whatsapp-box { background: #1a202c !important; }
       .section-title { color: #e2e8f0 !important; border-color: #4a5568 !important; }
       .grade-title { color: #cbd5e0 !important; }
+      .filter-row select { background: #1a202c !important; color: #e2e8f0 !important; }
     }
 
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
@@ -64,22 +66,26 @@
 
     .input-group { margin-bottom: 15px; }
     label { display: block; margin-bottom: 6px; font-weight: bold; font-size: 14px; color: var(--muted-color); }
-    input[type="text"] { width: 100%; padding: 12px 14px; border: 1px solid var(--border-color); border-radius: 10px; font-size: 15px; outline: none; transition: 0.2s; background: var(--input-bg); color: var(--text-color); }
-    input[type="text"]:focus { border-color: var(--secondary-color); box-shadow: 0 0 0 3px rgba(43, 108, 176, 0.1); }
+    input[type="text"], select { width: 100%; padding: 12px 14px; border: 1px solid var(--border-color); border-radius: 10px; font-size: 15px; outline: none; transition: 0.2s; background: var(--input-bg); color: var(--text-color); font-family: inherit; }
+    input[type="text"]:focus, select:focus { border-color: var(--secondary-color); box-shadow: 0 0 0 3px rgba(43, 108, 176, 0.1); }
+
+    .filter-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
 
     button { width: 100%; padding: 12px; background: var(--primary-color); color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: bold; cursor: pointer; margin-bottom: 10px; transition: 0.2s; }
     button:hover { opacity: 0.93; transform: translateY(-1px); }
+    button:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
     .btn-whatsapp { background-color: var(--whatsapp-color); }
     .btn-copy { background-color: #3182ce; }
     .btn-print { background-color: #805ad5; }
+    .btn-png { background-color: #38a169; }
     .btn-back { background-color: #718096; width: auto; padding: 8px 16px; font-size: 13px; margin-bottom: 15px; display: inline-flex; align-items: center; gap: 5px; }
 
     .student-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px; margin-bottom: 10px; cursor: pointer; transition: 0.2s; display: flex; justify-content: space-between; align-items: center; }
     .student-card:hover { border-color: var(--secondary-color); transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
     .student-name { font-weight: bold; font-size: 16px; color: var(--text-color); }
     .student-info { font-size: 13px; color: var(--muted-color); margin-top: 4px; }
-    .student-badge { background: #ebf8ff; color: #2b6cb0; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; }
+    .student-badge { background: #ebf8ff; color: #2b6cb0; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; white-space: nowrap; }
 
     .report-card-header { background: linear-gradient(135deg, #1a365d 0%, #2b6cb0 100%); color: white; border-radius: 12px; padding: 18px; margin-bottom: 18px; }
     .report-card-header h3 { margin: 0 0 10px 0; font-size: 20px; font-weight: 800; }
@@ -95,7 +101,7 @@
     .grade-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border-radius: 8px; margin-bottom: 6px; background: var(--input-bg); border: 1px solid var(--border-color); }
     .grade-title { font-size: 13px; font-weight: 600; color: var(--muted-color); }
 
-    .score-badge { font-weight: 700; font-size: 13px; padding: 4px 10px; border-radius: 6px; display: inline-block; }
+    .score-badge { font-weight: 700; font-size: 13px; padding: 4px 10px; border-radius: 6px; display: inline-block; white-space: nowrap; }
     .score-excellent { background-color: var(--success-bg); color: var(--success-text); }
     .score-good { background-color: var(--warning-bg); color: var(--warning-text); }
     .score-poor { background-color: var(--danger-bg); color: var(--danger-text); }
@@ -108,6 +114,10 @@
     .signature { text-align: center; font-weight: bold; margin-top: 20px; padding-top: 12px; border-top: 1px dashed var(--border-color); color: var(--primary-color); font-size: 13px; }
 
     .loading-msg { text-align: center; color: var(--muted-color); padding: 20px; font-size: 14px; }
+
+    /* شاشة انتظار عند تصدير PNG */
+    .export-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 9999; color: #fff; font-size: 16px; font-weight: bold; }
+    .export-overlay.active { display: flex; }
 
     @media print {
       .btn-back, .whatsapp-box, .absence-btn, button, .status-container, .brand-subtitle { display: none !important; }
@@ -123,12 +133,12 @@
 
 <div class="container">
   <div class="brand-header">
-    <svg class="brand-logo" viewBox="0 0 300 100" width="180" height="60" xmlns="http://www.w3.org/2000/svg">
-      <text x="50%" y="45%" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="#1a365d">محمد شحاتة</text>
-      <text x="50%" y="75%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#718096" letter-spacing="2">Mohamed Shehata</text>
+    <svg class="brand-logo" viewBox="0 0 300 120" width="200" height="80" xmlns="http://www.w3.org/2000/svg">
+      <text x="50%" y="35%" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-size="26" font-weight="bold" fill="#1a365d">محمد شحاتة</text>
+      <text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#718096" letter-spacing="2">Mohamed Shehata</text>
+      <text x="50%" y="80%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="600" fill="#2b6cb0">مدرس المواد الشرعية</text>
     </svg>
     <h2>منصة متابعة الطلاب</h2>
-    <div class="brand-subtitle">مدرس المواد الشرعية</div>
     <div class="status-container">
       <div class="status-bar" id="syncStatus">جاري التحقق من البيانات...</div>
       <button type="button" class="btn-refresh-sync" onclick="forceSyncData()" title="تحديث البيانات من الشيت الآن">🔄 تحديث</button>
@@ -136,6 +146,21 @@
   </div>
 
   <div id="appScreen">
+    <div class="filter-row">
+      <div>
+        <label for="stageFilter">📖 المرحلة</label>
+        <select id="stageFilter" onchange="searchStudents()">
+          <option value="">كل المراحل</option>
+        </select>
+      </div>
+      <div>
+        <label for="groupFilter">👥 المجموعة</label>
+        <select id="groupFilter" onchange="searchStudents()">
+          <option value="">كل المجموعات</option>
+        </select>
+      </div>
+    </div>
+
     <div class="search-box">
       <input type="text" id="searchInput" oninput="searchStudents()" placeholder="🔍 ابحث باسم الطالب، رقم الطالب، أو رقم ولي الأمر...">
     </div>
@@ -152,11 +177,14 @@
         <input type="text" id="customPhoneInput" placeholder="أدخل الرقم المراد الإرسال إليه...">
       </div>
       <button class="btn-whatsapp" onclick="sendWhatsappReport()">إرسال التقرير عبر واتساب</button>
+      <button class="btn-png" onclick="exportReportAsPng()">🖼️ تصدير التقرير كصورة PNG</button>
       <button class="btn-copy" onclick="copyReportText()">📋 نسخ نص التقرير</button>
       <button class="btn-print" onclick="window.print()">🖨️ طباعة التقرير</button>
     </div>
   </div>
 </div>
+
+<div class="export-overlay" id="exportOverlay">⏳ جاري تجهيز الصورة...</div>
 
 <script>
   // ============ الإعدادات ============
@@ -174,30 +202,38 @@
   function forceSyncData() {
     localStorage.removeItem("students_cache");
     localStorage.removeItem("last_sync_time");
-    updateStatus("جاري إعادة جلب البيانات فوراً...");
+    updateStatus("جاري تحديث البيانات...");
     initData(true);
   }
 
+  /**
+   * استراتيجية "Cache First, Background Sync":
+   * 1. اعرض الكاش فوراً (سرعة فورية)
+   * 2. اجلب بيانات جديدة في الخلفية بصمت
+   * 3. حدّث الواجهة تلقائياً إذا تغيرت
+   */
   async function initData(isForce = false) {
     const cached = localStorage.getItem("students_cache");
-    const lastSync = localStorage.getItem("last_sync_time");
 
+    // المرحلة 1: عرض الكاش فوراً
     if (cached && !isForce) {
       try {
         studentsData = JSON.parse(cached);
-        updateStatus("آخر مزامنة: " + (lastSync || "محلياً"));
+        buildFilters();
+        updateStatus("✅ البيانات جاهزة (قابلة للتحديث تلقائياً)");
       } catch(e) {
         localStorage.removeItem("students_cache");
       }
     } else if (!isForce) {
-      updateStatus("جاري جلب البيانات لأول مرة...");
+      updateStatus("جاري تحميل البيانات...");
+    } else {
+      updateStatus("جاري تحديث البيانات...");
     }
 
+    // المرحلة 2: مزامنة في الخلفية
     try {
       const url = API_URL + (API_KEY ? "?key=" + encodeURIComponent(API_KEY) + "&t=" : "?t=") + new Date().getTime();
-
-      console.log("🔵 [1] محاولة الاتصال بـ:", url);
-      updateStatus("جاري الاتصال بالخادم...");
+      console.log("🔵 [Background Sync] Fetching:", url);
 
       const response = await fetch(url, {
         method: "GET",
@@ -205,29 +241,34 @@
         headers: { "Accept": "application/json" }
       });
 
-      console.log("🟢 [2] حالة الاستجابة:", response.status, response.statusText);
-      updateStatus("تم الاتصال، جاري قراءة البيانات...");
-
       const text = await response.text();
-      console.log("📦 [3] أول 300 حرف من الاستجابة:", text.substring(0, 300));
-
       let data;
       try {
         data = JSON.parse(text);
       } catch(e) {
-        console.error("❌ [4] الاستجابة ليست JSON. قد تكون صفحة تسجيل دخول Google أو خطأ.");
-        updateStatus("❌ الخادم أرجع رداً غير متوقع. اضغط F12 وافتح Console");
+        console.error("❌ الاستجابة ليست JSON");
+        if (studentsData.length === 0) {
+          updateStatus("❌ تعذر قراءة بيانات الخادم");
+        } else {
+          updateStatus("⚠️ وضع أوفلاين (بيانات محفوظة)");
+        }
         return;
       }
 
       if (data && data.error) {
-        console.error("❌ [5] خطأ من الخادم:", data.error);
-        updateStatus("❌ خطأ من الخادم: " + data.error);
+        console.error("❌ خطأ من الخادم:", data.error);
+        if (studentsData.length === 0) {
+          updateStatus("❌ " + data.error);
+        } else {
+          updateStatus("⚠️ وضع أوفلاين (بيانات محفوظة)");
+        }
         return;
       }
 
       if (data && data.students && Array.isArray(data.students)) {
         studentsData = data.students;
+        buildFilters();
+
         const now = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
 
         try {
@@ -237,28 +278,51 @@
           console.warn("⚠️ Cache full:", e);
         }
 
-        console.log("✅ [6] نجح! عدد الطلاب:", studentsData.length);
-        updateStatus("✅ تمت المزامنة (" + studentsData.length + " طالب) - " + now);
+        updateStatus("✅ تمت المزامنة الساعة " + now);
 
-        if (document.getElementById("searchInput").value.trim() !== "") {
+        // تحديث النتائج إن كان هناك بحث نشط
+        const currentQuery = document.getElementById("searchInput").value.trim();
+        const currentStage = document.getElementById("stageFilter").value;
+        const currentGroup = document.getElementById("groupFilter").value;
+        if (currentQuery || currentStage || currentGroup) {
           searchStudents();
         }
-      } else {
-        console.warn("⚠️ [7] الاستجابة لا تحتوي على students:", data);
-        updateStatus("⚠️ الاستجابة لا تحتوي على بيانات طلاب");
       }
     } catch (err) {
-      console.error("❌ [8] خطأ الاتصال:", err);
-      if (studentsData.length > 0) {
-        updateStatus("وضع أوفلاين (تعذر الاتصال بالشبكة)");
+      console.error("❌ خطأ الاتصال:", err);
+      if (studentsData.length === 0) {
+        updateStatus("❌ تعذر الاتصال بالخادم");
       } else {
-        updateStatus("❌ خطأ: " + err.message);
+        updateStatus("⚠️ وضع أوفلاين (بيانات محفوظة)");
       }
     }
   }
 
   function updateStatus(msg) {
     document.getElementById("syncStatus").innerText = msg;
+  }
+
+  /**
+   * بناء قوائم المراحل والمجموعات تلقائياً من البيانات
+   */
+  function buildFilters() {
+    const stageSelect = document.getElementById("stageFilter");
+    const groupSelect = document.getElementById("groupFilter");
+
+    const currentStage = stageSelect.value;
+    const currentGroup = groupSelect.value;
+
+    const stages = [...new Set(studentsData.map(s => s.stage).filter(Boolean))].sort();
+    const groups = [...new Set(studentsData.map(s => s.group).filter(Boolean))].sort();
+
+    stageSelect.innerHTML = '<option value="">كل المراحل</option>' +
+      stages.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+
+    groupSelect.innerHTML = '<option value="">كل المجموعات</option>' +
+      groups.map(g => `<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`).join('');
+
+    if (stages.includes(currentStage)) stageSelect.value = currentStage;
+    if (groups.includes(currentGroup)) groupSelect.value = currentGroup;
   }
 
   function extractDigits(val) {
@@ -329,7 +393,7 @@
     const match = cleanTitle.match(/[\(\（]\s*([\d\.]+)\s*[\)\）]/);
     if (match) {
       maxGrade = parseFloat(match[1]);
-      cleanTitle = cleanTitle.replace(/[\(\（]\s*[\d\.]+\s*[\)\）]/g, "").trim();
+      cleanTitle = cleanTitle.replace(/[\(\（]\s*[\d\.]+\s*[\)\）]/g, '').trim();
     }
 
     if (!cleanTitle || cleanTitle.length > 60) return null;
@@ -341,10 +405,15 @@
     const rawQuery = document.getElementById("searchInput").value;
     const query = normalizeArabic(rawQuery);
     const queryDigits = extractDigits(rawQuery);
+    const stageFilter = document.getElementById("stageFilter").value;
+    const groupFilter = document.getElementById("groupFilter").value;
     const resultsContainer = document.getElementById("resultsList");
     resultsContainer.innerHTML = "";
 
-    if (query.length < 1 && queryDigits.length < 2) return;
+    // إذا لم يكن هناك أي معيار بحث، لا تعرض نتائج
+    if (query.length < 1 && !stageFilter && !groupFilter) {
+      return;
+    }
 
     if (!studentsData || studentsData.length === 0) {
       resultsContainer.innerHTML = "<div class='loading-msg'>جاري تحميل البيانات... يرجى الانتظار</div>";
@@ -352,6 +421,14 @@
     }
 
     const filtered = studentsData.filter(s => {
+      // فلترة المرحلة
+      if (stageFilter && s.stage !== stageFilter) return false;
+      // فلترة المجموعة
+      if (groupFilter && s.group !== groupFilter) return false;
+
+      // لو ما فيه نص بحث، اقبل كل الطلاب في الفلتر
+      if (query.length < 1 && queryDigits.length < 2) return true;
+
       const sName = normalizeArabic(s.name);
       const matchName = query.length >= 1 && sName.includes(query);
 
@@ -525,80 +602,4 @@
             if (!isNaN(numScore)) {
               totalObtained += numScore;
               totalMax += parsed.maxScore;
-              const pct = Math.round((numScore / parsed.maxScore) * 100);
-              const emoji = pct >= 85 ? '🌟' : pct >= 65 ? '👍' : '⚠️';
-              msg += `• ${parsed.title}: ${numScore}/${parsed.maxScore} (${pct}%) ${emoji}\n`;
-            } else {
-              msg += `• ${parsed.title}: ${g.score}\n`;
-            }
-          } else {
-            msg += `• ${parsed.title}: لا يوجد درجة ❌\n`;
-          }
-        }
-      });
-    }
-
-    if (totalMax > 0) {
-      const percentage = Math.round((totalObtained / totalMax) * 100);
-      msg += `\n📈 *المجموع الكلي:* ${totalObtained} / ${totalMax} (${percentage}%)\n`;
-    }
-
-    msg += `\n📌 *لمتابعة الحضور والغياب بشكل لحظي:*\nيرجى طلب بيانات حسابكم الخاصة من إدارة السنتر والدخول عبر المنصة:\n🔗 https://alameed.center/\n`;
-    msg += `\nمع تحيات أ. محمد شحاتة (مدرس المواد الشرعية)`;
-    return msg;
-  }
-
-  function sendWhatsappReport() {
-    const inputPhone = document.getElementById("customPhoneInput").value.trim();
-    let targetPhone = extractDigits(inputPhone);
-
-    if (!targetPhone) {
-      alert("يرجى إدخال رقم هاتف صحيح للإرسال!");
-      return;
-    }
-
-    if (targetPhone.startsWith("0")) targetPhone = "2" + targetPhone;
-    if (!targetPhone.startsWith("20")) targetPhone = "20" + targetPhone;
-
-    const msgText = buildMessageText();
-    const encodedMsg = encodeURIComponent(msgText);
-    window.open(`https://wa.me/${targetPhone}?text=${encodedMsg}`, '_blank');
-  }
-
-  function copyReportText() {
-    const msgText = buildMessageText();
-    if (!msgText) return;
-
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(msgText).then(() => {
-        alert("تم نسخ نص التقرير بنجاح!");
-      }).catch(() => {
-        fallbackCopyText(msgText);
-      });
-    } else {
-      fallbackCopyText(msgText);
-    }
-  }
-
-  function fallbackCopyText(text) {
-    const textArea = document.createElement("textarea");
-    textArea.value = text;
-    document.body.appendChild(textArea);
-    textArea.focus();
-    textArea.select();
-    try {
-      document.execCommand('copy');
-      alert("تم نسخ نص التقرير بنجاح!");
-    } catch (err) {
-      alert("عذراً، فشل النسخ التلقائي.");
-    }
-    document.body.removeChild(textArea);
-  }
-
-  function showAppScreen() {
-    document.getElementById("reportScreen").style.display = "none";
-    document.getElementById("appScreen").style.display = "block";
-  }
-</script>
-</body>
-</html>
+              const p
