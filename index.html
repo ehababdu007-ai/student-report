@@ -224,7 +224,6 @@
     const groupSelect = document.getElementById("groupFilter");
     
     const stages = [...new Set(studentsData.map(s => (s.stage || '').trim()).filter(Boolean))].sort();
-    console.log("المراحل التي تم العثور عليها:", stages);
     stageSelect.innerHTML = '<option value="">كل المراحل</option>' + stages.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
     
     onStageChange();
