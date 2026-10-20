@@ -276,7 +276,6 @@
         console.log("✅ تمت المزامنة، عدد الطلاب:", studentsData.length);
         updateStatus("✅ تمت المزامنة الساعة " + now);
 
-        // تحديث النتائج إن كان هناك بحث نشط
         const currentQuery = document.getElementById("searchInput").value.trim();
         const currentStage = document.getElementById("stageFilter").value;
         const currentGroup = document.getElementById("groupFilter").value;
@@ -303,9 +302,6 @@
     document.getElementById("syncStatus").innerText = msg;
   }
 
-  /**
-   * بناء قوائم المراحل والمجموعات تلقائياً من البيانات
-   */
   function buildFilters() {
     const stageSelect = document.getElementById("stageFilter");
     const groupSelect = document.getElementById("groupFilter");
@@ -411,7 +407,6 @@
     const resultsContainer = document.getElementById("resultsList");
     resultsContainer.innerHTML = "";
 
-    // إذا لم يكن هناك أي معيار بحث، لا تعرض نتائج
     if (query.length < 1 && !stageFilter && !groupFilter) {
       return;
     }
@@ -422,12 +417,9 @@
     }
 
     const filtered = studentsData.filter(s => {
-      // فلترة المرحلة
       if (stageFilter && s.stage !== stageFilter) return false;
-      // فلترة المجموعة
       if (groupFilter && s.group !== groupFilter) return false;
 
-      // لو ما فيه نص بحث، اقبل كل الطلاب في الفلتر
       if (query.length < 1 && queryDigits.length < 2) return true;
 
       const sName = normalizeArabic(s.name);
@@ -447,7 +439,6 @@
       return;
     }
 
-    // عرض عدد النتائج لو كانت كبيرة
     if (filtered.length > 20) {
       const header = document.createElement("div");
       header.className = "results-header";
@@ -686,9 +677,6 @@
     document.getElementById("appScreen").style.display = "block";
   }
 
-  /**
-   * تصدير التقرير كصورة PNG
-   */
   async function exportReportAsPng() {
     if (!currentStudent) return;
 
@@ -698,7 +686,6 @@
     try {
       const reportElement = document.getElementById("reportContent");
 
-      // حفظ الحالة الأصلية
       const originalBg = reportElement.style.background;
       reportElement.style.background = getComputedStyle(document.body).backgroundColor;
 
@@ -711,10 +698,8 @@
         windowHeight: reportElement.scrollHeight
       });
 
-      // استرجاع الحالة الأصلية
       reportElement.style.background = originalBg;
 
-      // تحويل الكانفاس إلى رابط تحميل
       canvas.toBlob((blob) => {
         if (!blob) {
           alert("فشل إنشاء الصورة");
