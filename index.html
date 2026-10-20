@@ -89,7 +89,6 @@
     .export-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 9999; color: #fff; font-size: 16px; font-weight: bold; }
     .export-overlay.active { display: flex; }
 
-    /* Modal Styles */
     .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 10000; padding: 20px; overflow-y: auto; }
     .modal-overlay.visible { display: flex; align-items: flex-start; justify-content: center; }
     .modal-content { background: var(--card-bg); border-radius: 16px; max-width: 500px; width: 100%; padding: 20px; margin-top: 40px; max-height: 85vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
@@ -160,7 +159,6 @@
   </div>
 </div>
 
-<!-- Modal -->
 <div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)closeModal()">
   <div class="modal-content" onclick="event.stopPropagation()">
     <div class="modal-title" id="modal-title">عنوان</div>
@@ -221,39 +219,35 @@
 
   function updateStatus(msg) { document.getElementById("syncStatus").innerText = msg; }
 
-  // بناء قوائم المراحل والمجموعات
   function buildFilters() {
     const stageSelect = document.getElementById("stageFilter");
     const groupSelect = document.getElementById("groupFilter");
     
-    // 1. بناء قائمة المراحل
-    const stages = [...new Set(studentsData.map(s => s.stage).filter(Boolean))].sort();
+    // استخراج كل المراحل الفريدة
+    const stages = [...new Set(studentsData.map(s => (s.stage || '').trim()).filter(Boolean))].sort();
+    
+    // طباعة المراحل في الكونسول لنتأكد أنها موجودة
+    console.log("المراحل التي تم العثور عليها:", stages);
+
     stageSelect.innerHTML = '<option value="">كل المراحل</option>' + stages.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
     
-    // 2. إعادة بناء المجموعات بناءً على المرحلة الحالية (سيتم استدعاؤها من onStageChange)
     onStageChange();
   }
 
-  // عند تغيير المرحلة: تصفية المجموعات ثم البحث
   function onStageChange() {
     const stageSelect = document.getElementById("stageFilter");
     const groupSelect = document.getElementById("groupFilter");
     const selectedStage = stageSelect.value;
 
-    // تصفية الطلاب حسب المرحلة المختارة لمعرفة المجموعات المتاحة
     let studentsForGroups = studentsData;
     if (selectedStage) {
       studentsForGroups = studentsData.filter(s => s.stage === selectedStage);
     }
     
     const groups = [...new Set(studentsForGroups.map(s => s.group).filter(Boolean))].sort();
-    
-    // حفظ المجموعة المختارة سابقاً إن وجدت
     const currentGroup = groupSelect.value;
-    
     groupSelect.innerHTML = '<option value="">كل المجموعات</option>' + groups.map(g => `<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`).join('');
     
-    // استعادة المجموعة إن كانت لا تزال متاحة
     if (groups.includes(currentGroup)) {
       groupSelect.value = currentGroup;
     }
