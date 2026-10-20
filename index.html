@@ -159,6 +159,7 @@
   </div>
 </div>
 
+<!-- Modal -->
 <div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)closeModal()">
   <div class="modal-content" onclick="event.stopPropagation()">
     <div class="modal-title" id="modal-title">عنوان</div>
@@ -204,7 +205,7 @@
       
       if (data && data.students && Array.isArray(data.students)) {
         studentsData = data.students;
-        buildFilters(); // بناء القوائم هنا
+        buildFilters();
         const now = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
         try { localStorage.setItem("students_cache", JSON.stringify(studentsData)); localStorage.setItem("last_sync_time", now); } catch(e) {}
         updateStatus("✅ تمت المزامنة الساعة " + now);
@@ -223,12 +224,8 @@
     const stageSelect = document.getElementById("stageFilter");
     const groupSelect = document.getElementById("groupFilter");
     
-    // استخراج كل المراحل الفريدة
     const stages = [...new Set(studentsData.map(s => (s.stage || '').trim()).filter(Boolean))].sort();
-    
-    // طباعة المراحل في الكونسول لنتأكد أنها موجودة
     console.log("المراحل التي تم العثور عليها:", stages);
-
     stageSelect.innerHTML = '<option value="">كل المراحل</option>' + stages.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
     
     onStageChange();
@@ -395,7 +392,6 @@
     if (absenceBtn && hasAbsenceUrl) absenceBtn.addEventListener("click", () => openLink(absenceUrl));
   }
 
-  // دالة إرسال التقارير الجماعية مع فلتر الاختبار الأخير
   function showBulkReportModal() {
     const stageFilter = document.getElementById("stageFilter").value;
     const groupFilter = document.getElementById("groupFilter").value;
