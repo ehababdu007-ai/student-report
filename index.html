@@ -21,6 +21,7 @@
       .btn-refresh-sync { background: #4a5568 !important; color: #e2e8f0 !important; } input[type="text"], select { color: #e2e8f0 !important; }
       .whatsapp-box { background: #1a202c !important; } .section-title { color: #e2e8f0 !important; border-color: #4a5568 !important; }
       .filter-row select { background: #1a202c !important; color: #e2e8f0 !important; }
+      .bulk-item { background: #1a202c !important; border-color: #4a5568 !important; }
     }
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 15px; transition: background 0.3s; }
@@ -122,8 +123,18 @@
 
   <div id="appScreen">
     <div class="filter-row">
-      <div><label for="stageFilter">📖 المرحلة</label><select id="stageFilter" onchange="searchStudents()"><option value="">كل المراحل</option></select></div>
-      <div><label for="groupFilter">👥 المجموعة</label><select id="groupFilter" onchange="searchStudents()"><option value="">كل المجموعات</option></select></div>
+      <div>
+        <label for="stageFilter">📖 المرحلة</label>
+        <select id="stageFilter" onchange="onStageChange()">
+          <option value="">كل المراحل</option>
+        </select>
+      </div>
+      <div>
+        <label for="groupFilter">👥 المجموعة</label>
+        <select id="groupFilter" onchange="searchStudents()">
+          <option value="">كل المجموعات</option>
+        </select>
+      </div>
     </div>
     <div class="search-box">
       <input type="text" id="searchInput" oninput="searchStudents()" placeholder="🔍 ابحث باسم الطالب، رقم الطالب، أو رقم ولي الأمر...">
@@ -192,12 +203,14 @@
         return;
       }
       if (data && data.error) { if (studentsData.length === 0) updateStatus("❌ " + data.error); else updateStatus("⚠️ وضع أوفلاين"); return; }
+      
       if (data && data.students && Array.isArray(data.students)) {
         studentsData = data.students;
-        buildFilters();
+        buildFilters(); // بناء القوائم هنا
         const now = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
         try { localStorage.setItem("students_cache", JSON.stringify(studentsData)); localStorage.setItem("last_sync_time", now); } catch(e) {}
         updateStatus("✅ تمت المزامنة الساعة " + now);
+        
         const currentQuery = document.getElementById("searchInput").value.trim();
         if (currentQuery) searchStudents();
       }
@@ -208,17 +221,45 @@
 
   function updateStatus(msg) { document.getElementById("syncStatus").innerText = msg; }
 
+  // بناء قوائم المراحل والمجموعات
   function buildFilters() {
     const stageSelect = document.getElementById("stageFilter");
     const groupSelect = document.getElementById("groupFilter");
-    const currentStage = stageSelect.value; const currentGroup = groupSelect.value;
+    
+    // 1. بناء قائمة المراحل
     const stages = [...new Set(studentsData.map(s => s.stage).filter(Boolean))].sort();
-    const groups = [...new Set(studentsData.map(s => s.group).filter(Boolean))].sort();
     stageSelect.innerHTML = '<option value="">كل المراحل</option>' + stages.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+    
+    // 2. إعادة بناء المجموعات بناءً على المرحلة الحالية (سيتم استدعاؤها من onStageChange)
+    onStageChange();
+  }
+
+  // عند تغيير المرحلة: تصفية المجموعات ثم البحث
+  function onStageChange() {
+    const stageSelect = document.getElementById("stageFilter");
+    const groupSelect = document.getElementById("groupFilter");
+    const selectedStage = stageSelect.value;
+
+    // تصفية الطلاب حسب المرحلة المختارة لمعرفة المجموعات المتاحة
+    let studentsForGroups = studentsData;
+    if (selectedStage) {
+      studentsForGroups = studentsData.filter(s => s.stage === selectedStage);
+    }
+    
+    const groups = [...new Set(studentsForGroups.map(s => s.group).filter(Boolean))].sort();
+    
+    // حفظ المجموعة المختارة سابقاً إن وجدت
+    const currentGroup = groupSelect.value;
+    
     groupSelect.innerHTML = '<option value="">كل المجموعات</option>' + groups.map(g => `<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`).join('');
-    if (stages.includes(currentStage)) stageSelect.value = currentStage;
-    if (groups.includes(currentGroup)) groupSelect.value = currentGroup;
+    
+    // استعادة المجموعة إن كانت لا تزال متاحة
+    if (groups.includes(currentGroup)) {
+      groupSelect.value = currentGroup;
+    }
+
     toggleBulkBtn();
+    searchStudents();
   }
 
   function toggleBulkBtn() {
@@ -365,19 +406,14 @@
     const stageFilter = document.getElementById("stageFilter").value;
     const groupFilter = document.getElementById("groupFilter").value;
     
-    // 1. تصفية الطلاب حسب المرحلة/المجموعة
     const studentsInClass = studentsData.filter(s => {
       if (stageFilter && s.stage !== stageFilter) return false;
       if (groupFilter && s.group !== groupFilter) return false;
       return true;
     });
 
-    if (studentsInClass.length === 0) {
-      alert("لا يوجد طلاب في هذا التصنيف.");
-      return;
-    }
+    if (studentsInClass.length === 0) { alert("لا يوجد طلاب في هذا التصنيف."); return; }
 
-    // 2. استخراج أسماء الاختبارات المتاحة (من أول طالب كعينة)
     const allTests = [];
     studentsInClass[0].grades.forEach(g => {
       const parsed = parseGradeInfo(g.title, studentsInClass[0].stage);
@@ -397,7 +433,6 @@
     document.getElementById("modal-body").innerHTML = html;
     document.getElementById("modal-overlay").classList.add("visible");
 
-    // عرض القائمة الأولية
     renderBulkList();
   }
 
@@ -407,7 +442,6 @@
     const testFilter = document.getElementById("testFilterSelect").value;
     const container = document.getElementById("bulkListContainer");
 
-    // إعادة تصفية الطلاب
     let filtered = studentsData.filter(s => {
       if (stageFilter && s.stage !== stageFilter) return false;
       if (groupFilter && s.group !== groupFilter) return false;
@@ -421,18 +455,16 @@
       let testScore = null;
       let testMax = null;
 
-      // إذا تم اختيار اختبار معين، نبحث عن درجته
       if (testFilter) {
         const gradeRecord = student.grades.find(g => parseGradeInfo(g.title, student.stage)?.title === testFilter);
         if (gradeRecord) {
           const isNoGrade = (gradeRecord.score === "لا يوجد درجة" || gradeRecord.score === "" || gradeRecord.score === null || gradeRecord.score === undefined);
-          if (isNoGrade) return; // إذا كان غائباً، لا يظهر في القائمة
-          
+          if (isNoGrade) return;
           testScore = parseFloat(gradeRecord.score);
-          if (isNaN(testScore)) return; // إذا كانت الدرجة نصية غير مفهومة، تجاهله
+          if (isNaN(testScore)) return;
           testMax = parseGradeInfo(gradeRecord.title, student.stage).maxScore;
         } else {
-          return; // الطالب ليس لديه هذا الاختبار، إذن هو غائب
+          return;
         }
       }
 
@@ -443,16 +475,13 @@
       if (targetPhone.startsWith("0")) targetPhone = "2" + targetPhone;
       if (!targetPhone.startsWith("20") && targetPhone.length > 0) targetPhone = "20" + targetPhone;
 
-      // تجهيز النص
       const originalStudent = currentStudent;
       currentStudent = student;
       let msgText = "";
       if (testFilter && testScore !== null) {
-        // رسالة مخصصة لاختبار واحد
         const pct = Math.round((testScore / testMax) * 100);
         msgText = `*📋 نتيجة اختبار: ${testFilter}*\n\n👤 *الاسم:* ${student.name}\n📚 *المرحلة:* ${student.stage}\n\n📊 *الدرجة:* ${testScore} / ${testMax} (${pct}%)\n\n✍️ _مع تحيات أ. محمد شحاتة_`;
       } else {
-        // التقرير الشامل
         msgText = buildMessageText();
       }
       currentStudent = originalStudent;
@@ -474,20 +503,14 @@
             <div style="font-size: 11px; color: var(--muted-color);">📱 ${phone || 'غير مسجل'}</div>
           </div>
           <div class="bulk-btns">
-            ${hasPhone 
-              ? `<a href="${waLink}" target="_blank" class="bulk-btn-send">إرسال</a>`
-              : `<button class="bulk-btn-send" disabled>لا يوجد رقم</button>`
-            }
+            ${hasPhone ? `<a href="${waLink}" target="_blank" class="bulk-btn-send">إرسال</a>` : `<button class="bulk-btn-send" disabled>لا يوجد رقم</button>`}
             <button class="bulk-btn-copy" onclick="copySingleBulkMsg('${encodeURIComponent(msgText)}')">نسخ</button>
           </div>
         </div>
       `;
     });
 
-    if (count === 0) {
-      html += `<div style="text-align:center; color: var(--muted-color); padding: 20px;">لا يوجد طلاب مطابقين لهذا الفلتر (ربما الجميع غائب).</div>`;
-    }
-
+    if (count === 0) { html += `<div style="text-align:center; color: var(--muted-color); padding: 20px;">لا يوجد طلاب مطابقين لهذا الفلتر (ربما الجميع غائب).</div>`; }
     html += `</div>`;
     container.innerHTML = html;
   }
@@ -503,7 +526,6 @@
 
   function closeModal() { document.getElementById("modal-overlay").classList.remove("visible"); }
 
-  // التقرير الشامل (المستخدم في القائمة الجماعية)
   function buildMessageText() {
     if (!currentStudent) return "";
     const student = currentStudent;
