@@ -7,56 +7,28 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
     :root {
-      --primary-color: #1a365d;
-      --secondary-color: #2b6cb0;
-      --accent-color: #d69e2e;
-      --whatsapp-color: #25d366;
-      --bg-color: #f7fafc;
-      --card-bg: #ffffff;
-      --text-color: #2d3748;
-      --border-color: #e2e8f0;
-      --success-bg: #c6f6d5;
-      --success-text: #22543d;
-      --warning-bg: #feebc8;
-      --warning-text: #744210;
-      --danger-bg: #fed7d7;
-      --danger-text: #742a2a;
-      --muted-color: #718096;
-      --input-bg: #f8fafc;
+      --primary-color: #1a365d; --secondary-color: #2b6cb0; --bg-color: #f7fafc;
+      --card-bg: #ffffff; --text-color: #2d3748; --border-color: #e2e8f0;
+      --success-bg: #c6f6d5; --success-text: #22543d; --warning-bg: #feebc8;
+      --warning-text: #744210; --danger-bg: #fed7d7; --danger-text: #742a2a;
+      --muted-color: #718096; --input-bg: #f8fafc;
     }
-
     @media (prefers-color-scheme: dark) {
-      :root {
-        --bg-color: #1a202c;
-        --card-bg: #2d3748;
-        --text-color: #e2e8f0;
-        --border-color: #4a5568;
-        --input-bg: #1a202c;
-        --muted-color: #a0aec0;
-      }
-      .brand-header { background: #2d3748 !important; }
-      .brand-header h2 { color: #90cdf4 !important; }
-      .student-name { color: #e2e8f0 !important; }
-      .grade-row { background: #1a202c !important; border-color: #4a5568 !important; }
-      .perf-summary { background: #1a202c !important; }
-      .status-bar { background: #4a5568 !important; color: #e2e8f0 !important; }
-      .btn-refresh-sync { background: #4a5568 !important; color: #e2e8f0 !important; }
-      input[type="text"], select { color: #e2e8f0 !important; }
-      .whatsapp-box { background: #1a202c !important; }
-      .section-title { color: #e2e8f0 !important; border-color: #4a5568 !important; }
-      .grade-title { color: #cbd5e0 !important; }
+      :root { --bg-color: #1a202c; --card-bg: #2d3748; --text-color: #e2e8f0; --border-color: #4a5568; --input-bg: #1a202c; --muted-color: #a0aec0; }
+      .brand-header { background: #2d3748 !important; } .brand-header h2 { color: #90cdf4 !important; }
+      .student-name { color: #e2e8f0 !important; } .grade-row { background: #1a202c !important; border-color: #4a5568 !important; }
+      .perf-summary { background: #1a202c !important; } .status-bar { background: #4a5568 !important; color: #e2e8f0 !important; }
+      .btn-refresh-sync { background: #4a5568 !important; color: #e2e8f0 !important; } input[type="text"], select { color: #e2e8f0 !important; }
+      .whatsapp-box { background: #1a202c !important; } .section-title { color: #e2e8f0 !important; border-color: #4a5568 !important; }
       .filter-row select { background: #1a202c !important; color: #e2e8f0 !important; }
     }
-
-    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 15px; transition: background 0.3s; }
     .container { max-width: 650px; margin: 0 auto; }
 
     .brand-header { text-align: center; margin-bottom: 20px; padding: 15px 10px; background: var(--card-bg); border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.04); }
     .brand-logo { max-width: 200px; height: auto; margin-bottom: 8px; }
     .brand-header h2 { margin: 5px 0; color: var(--primary-color); font-size: 22px; font-weight: 800; }
-    .brand-subtitle { font-size: 13px; color: var(--muted-color); margin-top: 2px; }
-
     .status-container { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
     .status-bar { font-size: 12px; color: var(--muted-color); text-align: center; background: #edf2f7; padding: 4px 12px; border-radius: 20px; }
     .btn-refresh-sync { background: #e2e8f0; border: none; cursor: pointer; font-size: 12px; padding: 4px 10px; border-radius: 20px; color: #4a5568; font-weight: bold; transition: 0.2s; }
@@ -76,10 +48,7 @@
     button:hover { opacity: 0.93; transform: translateY(-1px); }
     button:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
-    .btn-whatsapp { background-color: var(--whatsapp-color); }
-    .btn-copy { background-color: #3182ce; }
-    .btn-print { background-color: #805ad5; }
-    .btn-png { background-color: #38a169; }
+    .btn-whatsapp { background-color: #25d366; } .btn-copy { background-color: #3182ce; } .btn-print { background-color: #805ad5; } .btn-png { background-color: #38a169; }
     .btn-back { background-color: #718096; width: auto; padding: 8px 16px; font-size: 13px; margin-bottom: 15px; display: inline-flex; align-items: center; gap: 5px; }
 
     .student-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px; margin-bottom: 10px; cursor: pointer; transition: 0.2s; display: flex; justify-content: space-between; align-items: center; }
@@ -116,18 +85,23 @@
 
     .loading-msg { text-align: center; color: var(--muted-color); padding: 20px; font-size: 14px; }
     .results-header { font-size: 13px; color: var(--muted-color); margin-bottom: 8px; padding: 0 4px; }
-
     .export-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 9999; color: #fff; font-size: 16px; font-weight: bold; }
     .export-overlay.active { display: flex; }
 
-    @media print {
-      .btn-back, .whatsapp-box, .absence-btn, button, .status-container, .brand-subtitle { display: none !important; }
-      body { background: white; padding: 0; }
-      #reportScreen { box-shadow: none; border: none; padding: 0; }
-      .report-card-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      .score-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      .perf-summary { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    }
+    /* Modal Styles */
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 10000; padding: 20px; overflow-y: auto; }
+    .modal-overlay.visible { display: flex; align-items: flex-start; justify-content: center; }
+    .modal-content { background: var(--card-bg); border-radius: 16px; max-width: 500px; width: 100%; padding: 20px; margin-top: 40px; max-height: 85vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+    .modal-title { font-size: 18px; font-weight: 800; color: var(--primary-color); margin-bottom: 12px; text-align: center; }
+    .modal-close { width: 100%; margin-top: 12px; padding: 10px; background: #64748b; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; }
+    
+    .bulk-item { display: flex; justify-content: space-between; align-items: center; background: var(--input-bg); padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 8px; }
+    .bulk-btns { display: flex; gap: 6px; }
+    .bulk-btn-send { background: #25d366; color: #fff; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: bold; }
+    .bulk-btn-send:disabled { background: #a0aec0; cursor: not-allowed; }
+    .bulk-btn-copy { background: #3182ce; color: #fff; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; border: none; }
+
+    @media print { .btn-back, .whatsapp-box, .absence-btn, button, .status-container, .brand-subtitle { display: none !important; } body { background: white; padding: 0; } #reportScreen { box-shadow: none; border: none; padding: 0; } .report-card-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; } .score-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; } .perf-summary { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
   </style>
 </head>
 <body>
@@ -148,40 +122,39 @@
 
   <div id="appScreen">
     <div class="filter-row">
-      <div>
-        <label for="stageFilter">📖 المرحلة</label>
-        <select id="stageFilter" onchange="searchStudents()">
-          <option value="">كل المراحل</option>
-        </select>
-      </div>
-      <div>
-        <label for="groupFilter">👥 المجموعة</label>
-        <select id="groupFilter" onchange="searchStudents()">
-          <option value="">كل المجموعات</option>
-        </select>
-      </div>
+      <div><label for="stageFilter">📖 المرحلة</label><select id="stageFilter" onchange="searchStudents()"><option value="">كل المراحل</option></select></div>
+      <div><label for="groupFilter">👥 المجموعة</label><select id="groupFilter" onchange="searchStudents()"><option value="">كل المجموعات</option></select></div>
     </div>
-
     <div class="search-box">
       <input type="text" id="searchInput" oninput="searchStudents()" placeholder="🔍 ابحث باسم الطالب، رقم الطالب، أو رقم ولي الأمر...">
     </div>
+    
+    <button id="bulkSendBtn" onclick="showBulkReportModal()" style="background-color: #25d366; margin-top: 10px; display: none;">
+      📲 إرسال تقارير الصف/المجموعة الحالية
+    </button>
+
     <div id="resultsList" style="margin-top: 15px;"></div>
   </div>
 
   <div id="reportScreen" style="display: none;">
     <button class="btn-back" onclick="showAppScreen()">← العودة للبحث</button>
     <div id="reportContent"></div>
-
     <div class="whatsapp-box">
-      <div class="input-group">
-        <label>📲 رقم الهاتف للإرسال عبر واتساب:</label>
-        <input type="text" id="customPhoneInput" placeholder="أدخل الرقم المراد الإرسال إليه...">
-      </div>
+      <div class="input-group"><label>📲 رقم الهاتف للإرسال عبر واتساب:</label><input type="text" id="customPhoneInput" placeholder="أدخل الرقم المراد الإرسال إليه..."></div>
       <button class="btn-whatsapp" onclick="sendWhatsappReport()">إرسال التقرير عبر واتساب</button>
       <button class="btn-png" onclick="exportReportAsPng()">🖼️ تصدير التقرير كصورة PNG</button>
       <button class="btn-copy" onclick="copyReportText()">📋 نسخ نص التقرير</button>
       <button class="btn-print" onclick="window.print()">🖨️ طباعة التقرير</button>
     </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal-content" onclick="event.stopPropagation()">
+    <div class="modal-title" id="modal-title">عنوان</div>
+    <div id="modal-body"></div>
+    <button class="modal-close" onclick="closeModal()">إغلاق</button>
   </div>
 </div>
 
@@ -194,9 +167,7 @@
   let studentsData = [];
   let currentStudent = null;
 
-  window.addEventListener("DOMContentLoaded", () => {
-    initData();
-  });
+  window.addEventListener("DOMContentLoaded", () => { initData(); });
 
   function forceSyncData() {
     localStorage.removeItem("students_cache");
@@ -207,352 +178,162 @@
 
   async function initData(isForce = false) {
     const cached = localStorage.getItem("students_cache");
-
     if (cached && !isForce) {
-      try {
-        studentsData = JSON.parse(cached);
-        buildFilters();
-        updateStatus("✅ البيانات جاهزة");
-      } catch(e) {
-        localStorage.removeItem("students_cache");
-      }
-    } else if (!isForce) {
-      updateStatus("جاري تحميل البيانات...");
-    } else {
-      updateStatus("جاري تحديث البيانات...");
-    }
+      try { studentsData = JSON.parse(cached); buildFilters(); updateStatus("✅ البيانات جاهزة"); } catch(e) { localStorage.removeItem("students_cache"); }
+    } else if (!isForce) { updateStatus("جاري تحميل البيانات..."); } else { updateStatus("جاري تحديث البيانات..."); }
 
     try {
       const url = API_URL + (API_KEY ? "?key=" + encodeURIComponent(API_KEY) + "&t=" : "?t=") + new Date().getTime();
-      console.log("🔵 [Background Sync] Fetching:", url);
-
-      const response = await fetch(url, {
-        method: "GET",
-        redirect: "follow",
-        headers: { "Accept": "application/json" }
-      });
-
+      const response = await fetch(url, { method: "GET", redirect: "follow", headers: { "Accept": "application/json" } });
       const text = await response.text();
       let data;
-      try {
-        data = JSON.parse(text);
-      } catch(e) {
-        console.error("❌ الاستجابة ليست JSON. أول 200 حرف:", text.substring(0, 200));
-        if (studentsData.length === 0) {
-          updateStatus("❌ تعذر قراءة بيانات الخادم");
-        } else {
-          updateStatus("⚠️ وضع أوفلاين (بيانات محفوظة)");
-        }
+      try { data = JSON.parse(text); } catch(e) {
+        if (studentsData.length === 0) updateStatus("❌ تعذر قراءة بيانات الخادم"); else updateStatus("⚠️ وضع أوفلاين");
         return;
       }
-
-      if (data && data.error) {
-        console.error("❌ خطأ من الخادم:", data.error);
-        if (studentsData.length === 0) {
-          updateStatus("❌ " + data.error);
-        } else {
-          updateStatus("⚠️ وضع أوفلاين (بيانات محفوظة)");
-        }
-        return;
-      }
-
+      if (data && data.error) { if (studentsData.length === 0) updateStatus("❌ " + data.error); else updateStatus("⚠️ وضع أوفلاين"); return; }
       if (data && data.students && Array.isArray(data.students)) {
         studentsData = data.students;
         buildFilters();
-
         const now = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
-
-        try {
-          localStorage.setItem("students_cache", JSON.stringify(studentsData));
-          localStorage.setItem("last_sync_time", now);
-        } catch(e) {
-          console.warn("⚠️ Cache full:", e);
-        }
-
-        console.log("✅ تمت المزامنة، عدد الطلاب:", studentsData.length);
+        try { localStorage.setItem("students_cache", JSON.stringify(studentsData)); localStorage.setItem("last_sync_time", now); } catch(e) {}
         updateStatus("✅ تمت المزامنة الساعة " + now);
-
         const currentQuery = document.getElementById("searchInput").value.trim();
-        const currentStage = document.getElementById("stageFilter").value;
-        const currentGroup = document.getElementById("groupFilter").value;
-        if (currentQuery || currentStage || currentGroup) {
-          searchStudents();
-        }
-      } else {
-        console.warn("⚠️ الاستجابة لا تحتوي على students");
-        if (studentsData.length === 0) {
-          updateStatus("⚠️ لا توجد بيانات");
-        }
+        if (currentQuery) searchStudents();
       }
     } catch (err) {
-      console.error("❌ خطأ الاتصال:", err);
-      if (studentsData.length === 0) {
-        updateStatus("❌ تعذر الاتصال بالخادم");
-      } else {
-        updateStatus("⚠️ وضع أوفلاين (بيانات محفوظة)");
-      }
+      if (studentsData.length === 0) updateStatus("❌ تعذر الاتصال بالخادم"); else updateStatus("⚠️ وضع أوفلاين");
     }
   }
 
-  function updateStatus(msg) {
-    document.getElementById("syncStatus").innerText = msg;
-  }
+  function updateStatus(msg) { document.getElementById("syncStatus").innerText = msg; }
 
   function buildFilters() {
     const stageSelect = document.getElementById("stageFilter");
     const groupSelect = document.getElementById("groupFilter");
-
-    const currentStage = stageSelect.value;
-    const currentGroup = groupSelect.value;
-
+    const currentStage = stageSelect.value; const currentGroup = groupSelect.value;
     const stages = [...new Set(studentsData.map(s => s.stage).filter(Boolean))].sort();
     const groups = [...new Set(studentsData.map(s => s.group).filter(Boolean))].sort();
-
-    stageSelect.innerHTML = '<option value="">كل المراحل</option>' +
-      stages.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
-
-    groupSelect.innerHTML = '<option value="">كل المجموعات</option>' +
-      groups.map(g => `<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`).join('');
-
+    stageSelect.innerHTML = '<option value="">كل المراحل</option>' + stages.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+    groupSelect.innerHTML = '<option value="">كل المجموعات</option>' + groups.map(g => `<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`).join('');
     if (stages.includes(currentStage)) stageSelect.value = currentStage;
     if (groups.includes(currentGroup)) groupSelect.value = currentGroup;
+    toggleBulkBtn();
   }
 
-  function extractDigits(val) {
-    if (!val) return "";
-    return String(val).replace(/\D/g, "");
+  function toggleBulkBtn() {
+    const stage = document.getElementById("stageFilter").value;
+    const group = document.getElementById("groupFilter").value;
+    const bulkBtn = document.getElementById("bulkSendBtn");
+    if (bulkBtn) bulkBtn.style.display = (stage || group) ? "block" : "none";
   }
+
+  function extractDigits(val) { return val ? String(val).replace(/\D/g, "") : ""; }
 
   function normalizeArabic(text) {
     if (!text) return "";
-    return String(text)
-      .trim()
-      .toLowerCase()
-      .replace(/[\u200B-\u200D\uFEFF]/g, '')
-      .replace(/[أإآٱ]/g, 'ا')
-      .replace(/ى/g, 'ي')
-      .replace(/ة/g, 'ه')
-      .replace(/[ؤئ]/g, function(c) { return c === 'ؤ' ? 'و' : 'ي'; })
-      .replace(/\s+/g, ' ');
+    return String(text).trim().toLowerCase().replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/[أإآٱ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه').replace(/[ؤئ]/g, function(c) { return c === 'ؤ' ? 'و' : 'ي'; }).replace(/\s+/g, ' ');
   }
 
   function getValidUrl(url) {
     if (!url) return "";
     let trimmed = String(url).replace(/\s+/g, "").trim();
     if (!trimmed || trimmed === "undefined" || trimmed === "null") return "";
-    if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://")) {
-      return "https://" + trimmed;
-    }
-    return trimmed;
+    return (!trimmed.startsWith("http://") && !trimmed.startsWith("https://")) ? "https://" + trimmed : trimmed;
   }
 
   function openLink(url) {
     const validUrl = getValidUrl(url);
-    if (validUrl) {
-      window.open(validUrl, '_blank');
-    } else {
-      alert("لا يوجد رابط مسجل لهذا الطالب!");
-    }
+    if (validUrl) window.open(validUrl, '_blank'); else alert("لا يوجد رابط مسجل!");
   }
 
-  const EXCLUDED_FIELDS = [
-    "رقم الطالب", "تليفون الطالب", "هاتف الطالب", "رابط الطالب",
-    "رابط تقرير غياب الطالب", "رابط صفحة الطالب", "تليفون ولي الأمر",
-    "رقم ولي الأمر", "العنوان", "الملاحظات", "تاريخ التسجيل", "النوع",
-    "الحالة", "الرقم القومي", "الكود", "ملاحظات", "حالة الطالب", "حالة", "الوضع"
-  ];
+  const EXCLUDED_FIELDS = ["رقم الطالب", "تليفون الطالب", "هاتف الطالب", "رابط الطالب", "رابط تقرير غياب الطالب", "رابط صفحة الطالب", "تليفون ولي الأمر", "رقم ولي الأمر", "العنوان", "الملاحظات", "تاريخ التسجيل", "النوع", "الحالة", "الرقم القومي", "الكود", "ملاحظات", "حالة الطالب", "حالة", "الوضع"];
 
   function parseGradeInfo(title, stage) {
     let cleanTitle = String(title || "").trim();
-
-    for (let keyword of EXCLUDED_FIELDS) {
-      if (cleanTitle.toLowerCase().includes(keyword.toLowerCase())) {
-        return null;
-      }
-    }
-
+    for (let keyword of EXCLUDED_FIELDS) { if (cleanTitle.toLowerCase().includes(keyword.toLowerCase())) return null; }
     let maxGrade = 25;
     const stageText = String(stage || "").trim();
-
-    if (stageText.includes("الأول الثانوي") || stageText.includes("الثاني الثانوي") ||
-        stageText.includes("١ث") || stageText.includes("٢ث")) {
-      maxGrade = 20;
-    } else if (stageText.includes("الثالث الثانوي") || stageText.includes("٣ث")) {
-      maxGrade = 40;
-    } else if (stageText.includes("إعدادي") || stageText.includes("ععدادي")) {
-      maxGrade = 25;
-    }
-
+    if (stageText.includes("الأول الثانوي") || stageText.includes("الثاني الثانوي") || stageText.includes("١ث") || stageText.includes("٢ث")) maxGrade = 20;
+    else if (stageText.includes("الثالث الثانوي") || stageText.includes("٣ث")) maxGrade = 40;
+    else if (stageText.includes("إعدادي") || stageText.includes("ععدادي")) maxGrade = 25;
     const match = cleanTitle.match(/[\(\（]\s*([\d\.]+)\s*[\)\）]/);
-    if (match) {
-      maxGrade = parseFloat(match[1]);
-      cleanTitle = cleanTitle.replace(/[\(\（]\s*[\d\.]+\s*[\)\）]/g, '').trim();
-    }
-
+    if (match) { maxGrade = parseFloat(match[1]); cleanTitle = cleanTitle.replace(/[\(\（]\s*[\d\.]+\s*[\)\）]/g, '').trim(); }
     if (!cleanTitle || cleanTitle.length > 60) return null;
-
     return { title: cleanTitle, maxScore: maxGrade };
   }
 
   function searchStudents() {
     const rawQuery = document.getElementById("searchInput").value;
-    const query = normalizeArabic(rawQuery);
-    const queryDigits = extractDigits(rawQuery);
-    const stageFilter = document.getElementById("stageFilter").value;
-    const groupFilter = document.getElementById("groupFilter").value;
-    const resultsContainer = document.getElementById("resultsList");
-    resultsContainer.innerHTML = "";
+    const query = normalizeArabic(rawQuery); const queryDigits = extractDigits(rawQuery);
+    const stageFilter = document.getElementById("stageFilter").value; const groupFilter = document.getElementById("groupFilter").value;
+    const resultsContainer = document.getElementById("resultsList"); resultsContainer.innerHTML = "";
+    
+    toggleBulkBtn();
 
-    if (query.length < 1 && !stageFilter && !groupFilter) {
-      return;
-    }
-
-    if (!studentsData || studentsData.length === 0) {
-      resultsContainer.innerHTML = "<div class='loading-msg'>جاري تحميل البيانات... يرجى الانتظار</div>";
-      return;
-    }
+    if (query.length < 1 && !stageFilter && !groupFilter) return;
+    if (!studentsData || studentsData.length === 0) { resultsContainer.innerHTML = "<div class='loading-msg'>جاري تحميل البيانات...</div>"; return; }
 
     const filtered = studentsData.filter(s => {
       if (stageFilter && s.stage !== stageFilter) return false;
       if (groupFilter && s.group !== groupFilter) return false;
-
       if (query.length < 1 && queryDigits.length < 2) return true;
-
-      const sName = normalizeArabic(s.name);
-      const matchName = query.length >= 1 && sName.includes(query);
-
-      const sPhoneDigits = extractDigits(s.studentPhone);
-      const pPhoneDigits = extractDigits(s.parentPhone);
-
+      const sName = normalizeArabic(s.name); const matchName = query.length >= 1 && sName.includes(query);
+      const sPhoneDigits = extractDigits(s.studentPhone); const pPhoneDigits = extractDigits(s.parentPhone);
       const matchStudentPhone = queryDigits.length >= 2 && sPhoneDigits.includes(queryDigits);
       const matchParentPhone = queryDigits.length >= 2 && pPhoneDigits.includes(queryDigits);
-
       return matchName || matchStudentPhone || matchParentPhone;
     });
 
-    if (filtered.length === 0) {
-      resultsContainer.innerHTML = "<div style='text-align:center; color:var(--muted-color); margin-top:10px;'>لا توجد نتائج مطابقة</div>";
-      return;
-    }
-
-    if (filtered.length > 20) {
-      const header = document.createElement("div");
-      header.className = "results-header";
-      header.textContent = `عدد النتائج: ${filtered.length} — استخدم البحث لتضييق النتائج`;
-      resultsContainer.appendChild(header);
-    }
+    if (filtered.length === 0) { resultsContainer.innerHTML = "<div style='text-align:center; color:var(--muted-color); margin-top:10px;'>لا توجد نتائج مطابقة</div>"; return; }
+    if (filtered.length > 20) { const header = document.createElement("div"); header.className = "results-header"; header.textContent = `عدد النتائج: ${filtered.length}`; resultsContainer.appendChild(header); }
 
     filtered.forEach(student => {
-      const card = document.createElement("div");
-      card.className = "student-card";
-      card.onclick = () => renderReport(student);
-      card.innerHTML = `
-        <div>
-          <div class="student-name">${escapeHtml(student.name)}</div>
-          <div class="student-info">المرحلة: ${escapeHtml(student.stage)}</div>
-        </div>
-        <div class="student-badge">${escapeHtml(student.group || "المجموعة العامة")}</div>
-      `;
+      const card = document.createElement("div"); card.className = "student-card"; card.onclick = () => renderReport(student);
+      card.innerHTML = `<div><div class="student-name">${escapeHtml(student.name)}</div><div class="student-info">المرحلة: ${escapeHtml(student.stage)}</div></div><div class="student-badge">${escapeHtml(student.group || "المجموعة العامة")}</div>`;
       resultsContainer.appendChild(card);
     });
   }
 
-  function escapeHtml(str) {
-    if (str === null || str === undefined) return "";
-    return String(str)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
-  }
+  function escapeHtml(str) { return str === null || str === undefined ? "" : String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;"); }
 
   function renderReport(student) {
     currentStudent = student;
     document.getElementById("appScreen").style.display = "none";
     document.getElementById("reportScreen").style.display = "block";
+    document.getElementById("customPhoneInput").value = extractDigits(student.parentPhone || student.studentPhone);
 
-    const defaultPhone = extractDigits(student.parentPhone || student.studentPhone);
-    document.getElementById("customPhoneInput").value = defaultPhone;
-
-    let gradesHTML = "";
-    let totalObtained = 0;
-    let totalMax = 0;
-    let testsCount = 0;
+    let gradesHTML = ""; let totalObtained = 0; let totalMax = 0; let testsCount = 0;
 
     if (student.grades && Array.isArray(student.grades)) {
       student.grades.forEach(g => {
         const parsed = parseGradeInfo(g.title, student.stage);
         if (parsed) {
-          const isNoGrade = (g.score === "لا يوجد درجة" || g.score === "" ||
-                             g.score === null || g.score === undefined);
-          let badgeClass = "score-poor";
-          let displayScore = "";
-
-          if (isNoGrade) {
-            displayScore = "لا يوجد درجة";
-          } else {
+          const isNoGrade = (g.score === "لا يوجد درجة" || g.score === "" || g.score === null || g.score === undefined);
+          let badgeClass = "score-poor"; let displayScore = "";
+          if (isNoGrade) { displayScore = "لا يوجد درجة"; } else {
             const numScore = parseFloat(g.score);
             if (!isNaN(numScore)) {
-              totalObtained += numScore;
-              totalMax += parsed.maxScore;
-              testsCount++;
-
+              totalObtained += numScore; totalMax += parsed.maxScore; testsCount++;
               const ratio = numScore / parsed.maxScore;
-              if (ratio >= 0.85) badgeClass = "score-excellent";
-              else if (ratio >= 0.65) badgeClass = "score-good";
-              else badgeClass = "score-poor";
-
+              if (ratio >= 0.85) badgeClass = "score-excellent"; else if (ratio >= 0.65) badgeClass = "score-good"; else badgeClass = "score-poor";
               displayScore = `${numScore} / ${parsed.maxScore}`;
-            } else {
-              displayScore = escapeHtml(g.score);
-            }
+            } else { displayScore = escapeHtml(g.score); }
           }
-
-          gradesHTML += `
-            <div class="grade-row">
-              <span class="grade-title">${escapeHtml(parsed.title)}</span>
-              <span class="score-badge ${badgeClass}">${displayScore}</span>
-            </div>
-          `;
+          gradesHTML += `<div class="grade-row"><span class="grade-title">${escapeHtml(parsed.title)}</span><span class="score-badge ${badgeClass}">${displayScore}</span></div>`;
         }
       });
     }
 
     const percentage = totalMax > 0 ? Math.round((totalObtained / totalMax) * 100) : 0;
+    const summaryHTML = testsCount > 0 ? `<div class="perf-summary"><div class="perf-item"><span class="perf-val">${totalObtained} / ${totalMax}</span><span class="perf-lbl">المجموع الكلي</span></div><div class="perf-item"><span class="perf-val">${percentage}%</span><span class="perf-lbl">النسبة المئوية</span></div><div class="perf-item"><span class="perf-val">${testsCount}</span><span class="perf-lbl">عدد الاختبارات</span></div></div>` : '';
+    const absenceUrl = getValidUrl(student.profileLink); const hasAbsenceUrl = !!absenceUrl;
 
-    const summaryHTML = testsCount > 0 ? `
-      <div class="perf-summary">
-        <div class="perf-item">
-          <span class="perf-val">${totalObtained} / ${totalMax}</span>
-          <span class="perf-lbl">المجموع الكلي</span>
-        </div>
-        <div class="perf-item">
-          <span class="perf-val">${percentage}%</span>
-          <span class="perf-lbl">النسبة المئوية</span>
-        </div>
-        <div class="perf-item">
-          <span class="perf-val">${testsCount}</span>
-          <span class="perf-lbl">عدد الاختبارات</span>
-        </div>
-      </div>
-    ` : '';
-
-    const absenceUrl = getValidUrl(student.profileLink);
-    const hasAbsenceUrl = !!absenceUrl;
-
-    // التلوين الذكي لحالة الطالب
     let statusHTML = "";
     if (student.status) {
       const isNegative = student.status.includes("موقوف") || student.status.includes("إيقاف") || student.status.includes("مفصول");
-      const bgColor = isNegative ? "rgba(229, 62, 62, 0.2)" : "rgba(56, 161, 105, 0.2)";
-      const borderColor = isNegative ? "#e53e3e" : "#38a169";
-      const icon = isNegative ? "⚠️" : "✅";
-      statusHTML = `
-        <div style="grid-column: span 2; background: ${bgColor}; padding: 8px; border-radius: 6px; margin-top: 4px; text-align: center; border: 1px solid ${borderColor};">
-          ${icon} <strong>حالة الطالب:</strong> ${escapeHtml(student.status)}
-        </div>
-      `;
+      const bgColor = isNegative ? "rgba(229, 62, 62, 0.2)" : "rgba(56, 161, 105, 0.2)"; const borderColor = isNegative ? "#e53e3e" : "#38a169"; const icon = isNegative ? "⚠️" : "✅";
+      statusHTML = `<div style="grid-column: span 2; background: ${bgColor}; padding: 8px; border-radius: 6px; margin-top: 4px; text-align: center; border: 1px solid ${borderColor};">${icon} <strong>حالة الطالب:</strong> ${escapeHtml(student.status)}</div>`;
     }
 
     document.getElementById("reportContent").innerHTML = `
@@ -568,154 +349,222 @@
           ${statusHTML}
         </div>
       </div>
-
       ${summaryHTML}
-
-      <div class="section-title">
-        <span>سجل الاختبارات والواجبات</span>
-      </div>
+      <div class="section-title"><span>سجل الاختبارات والواجبات</span></div>
       ${gradesHTML || '<div style="text-align:center; color:var(--muted-color);">لا توجد درجات مسجلة</div>'}
-
-      <button type="button" class="absence-btn" id="absenceBtn" ${hasAbsenceUrl ? '' : 'disabled'}>
-        📌 ${hasAbsenceUrl ? 'تقرير غياب الطالب التفصيلي' : 'تقرير غياب الطالب (غير متوفر)'}
-      </button>
-
+      <button type="button" class="absence-btn" id="absenceBtn" ${hasAbsenceUrl ? '' : 'disabled'}>📌 ${hasAbsenceUrl ? 'تقرير غياب الطالب التفصيلي' : 'تقرير غياب الطالب (غير متوفر)'}</button>
       <div class="signature">مع تحيات أ. محمد شحاتة - مدرس المواد الشرعية</div>
     `;
 
     const absenceBtn = document.getElementById("absenceBtn");
-    if (absenceBtn && hasAbsenceUrl) {
-      absenceBtn.addEventListener("click", () => openLink(absenceUrl));
+    if (absenceBtn && hasAbsenceUrl) absenceBtn.addEventListener("click", () => openLink(absenceUrl));
+  }
+
+  // دالة إرسال التقارير الجماعية مع فلتر الاختبار الأخير
+  function showBulkReportModal() {
+    const stageFilter = document.getElementById("stageFilter").value;
+    const groupFilter = document.getElementById("groupFilter").value;
+    
+    // 1. تصفية الطلاب حسب المرحلة/المجموعة
+    const studentsInClass = studentsData.filter(s => {
+      if (stageFilter && s.stage !== stageFilter) return false;
+      if (groupFilter && s.group !== groupFilter) return false;
+      return true;
+    });
+
+    if (studentsInClass.length === 0) {
+      alert("لا يوجد طلاب في هذا التصنيف.");
+      return;
+    }
+
+    // 2. استخراج أسماء الاختبارات المتاحة (من أول طالب كعينة)
+    const allTests = [];
+    studentsInClass[0].grades.forEach(g => {
+      const parsed = parseGradeInfo(g.title, studentsInClass[0].stage);
+      if (parsed) allTests.push(parsed.title);
+    });
+
+    let html = `<div style="margin-bottom: 12px;">
+      <label style="font-weight: bold; color: var(--primary-color);">📝 اختر الاختبار لعرض الحضور والدرجة:</label>
+      <select id="testFilterSelect" onchange="renderBulkList()" style="margin-top: 5px; border: 2px solid var(--secondary-color);">
+        <option value="">كل الاختبارات (تقرير شامل)</option>
+        ${allTests.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('')}
+      </select>
+    </div>
+    <div id="bulkListContainer"></div>`;
+
+    document.getElementById("modal-title").innerText = `📲 إرسال تقارير: ${stageFilter || 'الكل'} - ${groupFilter || 'الكل'}`;
+    document.getElementById("modal-body").innerHTML = html;
+    document.getElementById("modal-overlay").classList.add("visible");
+
+    // عرض القائمة الأولية
+    renderBulkList();
+  }
+
+  function renderBulkList() {
+    const stageFilter = document.getElementById("stageFilter").value;
+    const groupFilter = document.getElementById("groupFilter").value;
+    const testFilter = document.getElementById("testFilterSelect").value;
+    const container = document.getElementById("bulkListContainer");
+
+    // إعادة تصفية الطلاب
+    let filtered = studentsData.filter(s => {
+      if (stageFilter && s.stage !== stageFilter) return false;
+      if (groupFilter && s.group !== groupFilter) return false;
+      return true;
+    });
+
+    let html = `<div style="max-height: 55vh; overflow-y: auto; padding-right: 5px;">`;
+    let count = 0;
+
+    filtered.forEach((student) => {
+      let testScore = null;
+      let testMax = null;
+
+      // إذا تم اختيار اختبار معين، نبحث عن درجته
+      if (testFilter) {
+        const gradeRecord = student.grades.find(g => parseGradeInfo(g.title, student.stage)?.title === testFilter);
+        if (gradeRecord) {
+          const isNoGrade = (gradeRecord.score === "لا يوجد درجة" || gradeRecord.score === "" || gradeRecord.score === null || gradeRecord.score === undefined);
+          if (isNoGrade) return; // إذا كان غائباً، لا يظهر في القائمة
+          
+          testScore = parseFloat(gradeRecord.score);
+          if (isNaN(testScore)) return; // إذا كانت الدرجة نصية غير مفهومة، تجاهله
+          testMax = parseGradeInfo(gradeRecord.title, student.stage).maxScore;
+        } else {
+          return; // الطالب ليس لديه هذا الاختبار، إذن هو غائب
+        }
+      }
+
+      count++;
+      const phone = extractDigits(student.parentPhone || student.studentPhone);
+      const hasPhone = phone.length >= 10;
+      let targetPhone = phone;
+      if (targetPhone.startsWith("0")) targetPhone = "2" + targetPhone;
+      if (!targetPhone.startsWith("20") && targetPhone.length > 0) targetPhone = "20" + targetPhone;
+
+      // تجهيز النص
+      const originalStudent = currentStudent;
+      currentStudent = student;
+      let msgText = "";
+      if (testFilter && testScore !== null) {
+        // رسالة مخصصة لاختبار واحد
+        const pct = Math.round((testScore / testMax) * 100);
+        msgText = `*📋 نتيجة اختبار: ${testFilter}*\n\n👤 *الاسم:* ${student.name}\n📚 *المرحلة:* ${student.stage}\n\n📊 *الدرجة:* ${testScore} / ${testMax} (${pct}%)\n\n✍️ _مع تحيات أ. محمد شحاتة_`;
+      } else {
+        // التقرير الشامل
+        msgText = buildMessageText();
+      }
+      currentStudent = originalStudent;
+
+      const encodedMsg = encodeURIComponent(msgText);
+      const waLink = hasPhone ? `https://wa.me/${targetPhone}?text=${encodedMsg}` : "#";
+
+      let scoreBadge = "";
+      if (testFilter && testScore !== null) {
+        const pct = Math.round((testScore / testMax) * 100);
+        const color = pct >= 85 ? "var(--success-text)" : pct >= 65 ? "var(--warning-text)" : "var(--danger-text)";
+        scoreBadge = `<span style="font-weight: bold; color: ${color}; font-size: 12px; margin-right: 8px;">(${testScore}/${testMax})</span>`;
+      }
+
+      html += `
+        <div class="bulk-item">
+          <div style="flex: 1;">
+            <div style="font-weight: bold; font-size: 14px; color: var(--text-color);">${count}. ${escapeHtml(student.name)} ${scoreBadge}</div>
+            <div style="font-size: 11px; color: var(--muted-color);">📱 ${phone || 'غير مسجل'}</div>
+          </div>
+          <div class="bulk-btns">
+            ${hasPhone 
+              ? `<a href="${waLink}" target="_blank" class="bulk-btn-send">إرسال</a>`
+              : `<button class="bulk-btn-send" disabled>لا يوجد رقم</button>`
+            }
+            <button class="bulk-btn-copy" onclick="copySingleBulkMsg('${encodeURIComponent(msgText)}')">نسخ</button>
+          </div>
+        </div>
+      `;
+    });
+
+    if (count === 0) {
+      html += `<div style="text-align:center; color: var(--muted-color); padding: 20px;">لا يوجد طلاب مطابقين لهذا الفلتر (ربما الجميع غائب).</div>`;
+    }
+
+    html += `</div>`;
+    container.innerHTML = html;
+  }
+
+  function copySingleBulkMsg(encodedMsg) {
+    const text = decodeURIComponent(encodedMsg);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => alert("تم نسخ النص!")).catch(() => alert("فشل النسخ."));
+    } else {
+      const ta = document.createElement("textarea"); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); alert("تم نسخ النص!");
     }
   }
 
+  function closeModal() { document.getElementById("modal-overlay").classList.remove("visible"); }
+
+  // التقرير الشامل (المستخدم في القائمة الجماعية)
   function buildMessageText() {
     if (!currentStudent) return "";
-
     const student = currentStudent;
-    let msg = "";
-
-    // 1. الترويسة (Header)
-    msg += `*📋 تقرير المتابعة الأسبوعي*\n`;
-    msg += `🏫 *منصة أ. محمد شحاتة*\n`;
-    msg += `━━━━━━━━━━━━━━━━━━\n\n`;
-
-    // 2. بيانات الطالب
-    msg += `👤 *الاسم:* ${student.name}\n`;
-    msg += `📚 *المرحلة:* ${student.stage}\n`;
-    msg += `👥 *المجموعة:* ${student.group || 'غير محددة'}\n`;
-
-    // 3. حالة الطالب (تظهر فقط إذا كانت مسجلة)
+    let msg = `*📋 تقرير المتابعة الأسبوعي*\n🏫 *منصة أ. محمد شحاتة*\n━━━━━━━━━━━━━━━━━━\n\n`;
+    msg += `👤 *الاسم:* ${student.name}\n📚 *المرحلة:* ${student.stage}\n👥 *المجموعة:* ${student.group || 'غير محددة'}\n`;
     if (student.status) {
       const isNegative = student.status.includes("موقوف") || student.status.includes("إيقاف") || student.status.includes("مفصول");
-      const statusEmoji = isNegative ? "🔴" : "🟢";
-      msg += `${statusEmoji} *حالة الطالب:* ${student.status}\n`;
+      msg += `${isNegative ? "🔴" : "🟢"} *حالة الطالب:* ${student.status}\n`;
     }
+    msg += `\n━━━━━━━━━━━━━━━━━━\n\n📊 *سجل الاختبارات والواجبات:*\n\n`;
     
-    msg += `\n━━━━━━━━━━━━━━━━━━\n\n`;
-
-    // 4. سجل الدرجات
-    msg += `📊 *سجل الاختبارات والواجبات:*\n\n`;
-
-    let totalObtained = 0;
-    let totalMax = 0;
-    let testsCount = 0;
-    let hasActualGrades = false;
-
+    let totalObtained = 0, totalMax = 0, testsCount = 0, hasActualGrades = false;
     if (student.grades && Array.isArray(student.grades)) {
       student.grades.forEach(g => {
         const parsed = parseGradeInfo(g.title, student.stage);
         if (parsed) {
           const isNoGrade = (g.score === "لا يوجد درجة" || g.score === "" || g.score === null || g.score === undefined);
-          
           if (!isNoGrade) {
             hasActualGrades = true;
             const numScore = parseFloat(g.score);
             if (!isNaN(numScore)) {
-              totalObtained += numScore;
-              totalMax += parsed.maxScore;
-              testsCount++;
-              
+              totalObtained += numScore; totalMax += parsed.maxScore; testsCount++;
               const pct = Math.round((numScore / parsed.maxScore) * 100);
               const emoji = pct >= 85 ? '🌟' : pct >= 65 ? '👍' : '⚠️';
               msg += `• ${parsed.title}: *${numScore}/${parsed.maxScore}* (${pct}%) ${emoji}\n`;
-            } else {
-              msg += `• ${parsed.title}: ${g.score}\n`;
-            }
+            } else { msg += `• ${parsed.title}: ${g.score}\n`; }
           }
         }
       });
     }
-
-    // إذا لم توجد درجات حقيقية، لا نكتب "لا يوجد درجة" 5 مرات، بل نكتب ملاحظة
-    if (!hasActualGrades) {
-      msg += `ℹ️ *لم يتم رصد درجات لهذا الطالب حتى الآن.*\n`;
-    }
-
-    // 5. الملخص الإحصائي (يظهر فقط إذا كانت هناك درجات)
+    if (!hasActualGrades) msg += `ℹ️ *لم يتم رصد درجات لهذا الطالب حتى الآن.*\n`;
     if (totalMax > 0) {
       const percentage = Math.round((totalObtained / totalMax) * 100);
-      msg += `\n📈 *الملخص:*\n`;
-      msg += `├ المجموع: *${totalObtained} / ${totalMax}*\n`;
-      msg += `├ النسبة: *${percentage}%*\n`;
-      msg += `└ الاختبارات المؤداة: *${testsCount}*\n`;
+      msg += `\n📈 *الملخص:*\n├ المجموع: *${totalObtained} / ${totalMax}*\n├ النسبة: *${percentage}%*\n└ الاختبارات المؤداة: *${testsCount}*\n`;
     }
-
-    // 6. التذييل (Footer)
-    msg += `\n━━━━━━━━━━━━━━━━━━\n`;
-    msg += `📌 *لمتابعة الحضور والغياب بشكل لحظي:*\n`;
-    msg += `🔗 https://alameed.center/\n\n`;
-    msg += `✍️ _مع تحيات أ. محمد شحاتة_\n`;
-    msg += `_مدرس المواد الشرعية_`;
-
+    msg += `\n━━━━━━━━━━━━━━━━━━\n📌 *لمتابعة الحضور والغياب بشكل لحظي:*\n🔗 https://alameed.center/\n\n✍️ _مع تحيات أ. محمد شحاتة_\n_مدرس المواد الشرعية_`;
     return msg;
   }
 
   function sendWhatsappReport() {
     const inputPhone = document.getElementById("customPhoneInput").value.trim();
     let targetPhone = extractDigits(inputPhone);
-
-    if (!targetPhone) {
-      alert("يرجى إدخال رقم هاتف صحيح للإرسال!");
-      return;
-    }
-
+    if (!targetPhone) { alert("يرجى إدخال رقم هاتف صحيح للإرسال!"); return; }
     if (targetPhone.startsWith("0")) targetPhone = "2" + targetPhone;
     if (!targetPhone.startsWith("20")) targetPhone = "20" + targetPhone;
-
     const msgText = buildMessageText();
-    const encodedMsg = encodeURIComponent(msgText);
-    window.open(`https://wa.me/${targetPhone}?text=${encodedMsg}`, '_blank');
+    window.open(`https://wa.me/${targetPhone}?text=${encodeURIComponent(msgText)}`, '_blank');
   }
 
   function copyReportText() {
     const msgText = buildMessageText();
     if (!msgText) return;
-
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(msgText).then(() => {
-        alert("تم نسخ نص التقرير بنجاح!");
-      }).catch(() => {
-        fallbackCopyText(msgText);
-      });
-    } else {
-      fallbackCopyText(msgText);
-    }
+      navigator.clipboard.writeText(msgText).then(() => alert("تم نسخ النص!")).catch(() => { fallbackCopy(msgText); });
+    } else { fallbackCopy(msgText); }
   }
 
-  function fallbackCopyText(text) {
-    const textArea = document.createElement("textarea");
-    textArea.value = text;
-    document.body.appendChild(textArea);
-    textArea.focus();
-    textArea.select();
-    try {
-      document.execCommand('copy');
-      alert("تم نسخ نص التقرير بنجاح!");
-    } catch (err) {
-      alert("عذراً، فشل النسخ التلقائي.");
-    }
-    document.body.removeChild(textArea);
+  function fallbackCopy(text) {
+    const ta = document.createElement("textarea"); ta.value = text; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); alert("تم نسخ النص!"); } catch (err) { alert("فشل النسخ."); }
+    document.body.removeChild(ta);
   }
 
   function showAppScreen() {
@@ -725,52 +574,19 @@
 
   async function exportReportAsPng() {
     if (!currentStudent) return;
-
-    const overlay = document.getElementById("exportOverlay");
-    overlay.classList.add("active");
-
+    const overlay = document.getElementById("exportOverlay"); overlay.classList.add("active");
     try {
-      const reportElement = document.getElementById("reportContent");
-
-      const originalBg = reportElement.style.background;
-      reportElement.style.background = getComputedStyle(document.body).backgroundColor;
-
-      const canvas = await html2canvas(reportElement, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: null,
-        logging: false,
-        windowWidth: reportElement.scrollWidth,
-        windowHeight: reportElement.scrollHeight
-      });
-
-      reportElement.style.background = originalBg;
-
+      const el = document.getElementById("reportContent");
+      const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: null });
       canvas.toBlob((blob) => {
-        if (!blob) {
-          alert("فشل إنشاء الصورة");
-          overlay.classList.remove("active");
-          return;
-        }
-
+        if (!blob) { alert("فشل إنشاء الصورة"); overlay.classList.remove("active"); return; }
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
-        const safeName = (currentStudent.name || "student").replace(/[^\u0600-\u06FF\w\s-]/g, '').trim();
-        link.download = `تقرير-${safeName}.png`;
-        link.href = url;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-
+        link.download = `تقرير-${(currentStudent.name || "student").replace(/[^\u0600-\u06FF\w\s-]/g, '').trim()}.png`;
+        link.href = url; document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url);
         overlay.classList.remove("active");
       }, "image/png", 0.95);
-
-    } catch (err) {
-      console.error("❌ خطأ تصدير PNG:", err);
-      alert("حدث خطأ أثناء إنشاء الصورة. حاول مرة أخرى.");
-      overlay.classList.remove("active");
-    }
+    } catch (err) { alert("حدث خطأ."); overlay.classList.remove("active"); }
   }
 </script>
 </body>
