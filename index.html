@@ -188,10 +188,8 @@
 <div class="export-overlay" id="exportOverlay">⏳ جاري تجهيز الصورة...</div>
 
 <script>
-  // ============ الإعدادات ============
   const API_URL = "https://script.google.com/macros/s/AKfycbw7TDCj4Mod9VkpCsoJYG5DZJR1kPBJGKyJ2UjPBa4rppuUgJScWO8-TJfn-osJpLda/exec";
   const API_KEY = "";
-  // ===================================
 
   let studentsData = [];
   let currentStudent = null;
@@ -210,7 +208,6 @@
   async function initData(isForce = false) {
     const cached = localStorage.getItem("students_cache");
 
-    // المرحلة 1: عرض الكاش فوراً
     if (cached && !isForce) {
       try {
         studentsData = JSON.parse(cached);
@@ -225,7 +222,6 @@
       updateStatus("جاري تحديث البيانات...");
     }
 
-    // المرحلة 2: مزامنة في الخلفية
     try {
       const url = API_URL + (API_KEY ? "?key=" + encodeURIComponent(API_KEY) + "&t=" : "?t=") + new Date().getTime();
       console.log("🔵 [Background Sync] Fetching:", url);
@@ -363,7 +359,7 @@
     "رقم الطالب", "تليفون الطالب", "هاتف الطالب", "رابط الطالب",
     "رابط تقرير غياب الطالب", "رابط صفحة الطالب", "تليفون ولي الأمر",
     "رقم ولي الأمر", "العنوان", "الملاحظات", "تاريخ التسجيل", "النوع",
-    "الحالة", "الرقم القومي", "الكود", "ملاحظات"
+    "الحالة", "الرقم القومي", "الكود", "ملاحظات", "حالة الطالب", "حالة", "الوضع"
   ];
 
   function parseGradeInfo(title, stage) {
@@ -545,6 +541,20 @@
     const absenceUrl = getValidUrl(student.profileLink);
     const hasAbsenceUrl = !!absenceUrl;
 
+    // 👈 التلوين الذكي لحالة الطالب
+    let statusHTML = "";
+    if (student.status) {
+      const isNegative = student.status.includes("موقوف") || student.status.includes("إيقاف") || student.status.includes("مفصول");
+      const bgColor = isNegative ? "rgba(229, 62, 62, 0.2)" : "rgba(56, 161, 105, 0.2)";
+      const borderColor = isNegative ? "#e53e3e" : "#38a169";
+      const icon = isNegative ? "⚠️" : "✅";
+      statusHTML = `
+        <div style="grid-column: span 2; background: ${bgColor}; padding: 8px; border-radius: 6px; margin-top: 4px; text-align: center; border: 1px solid ${borderColor};">
+          ${icon} <strong>حالة الطالب:</strong> ${escapeHtml(student.status)}
+        </div>
+      `;
+    }
+
     document.getElementById("reportContent").innerHTML = `
       <div class="report-card-header">
         <h3>${escapeHtml(student.name)}</h3>
@@ -555,6 +565,7 @@
           <div>📞 <strong>ولي الأمر:</strong> ${escapeHtml(student.parentPhone || "غير مسجل")}</div>
           <div>📍 <strong>العنوان:</strong> ${escapeHtml(student.address || "غير مدخل")}</div>
           <div>📅 <strong>تاريخ التسجيل:</strong> ${escapeHtml(student.registrationDate || "غير مدخل")}</div>
+          ${statusHTML}
         </div>
       </div>
 
@@ -585,11 +596,18 @@
     msg += `👤 *الاسم:* ${currentStudent.name}\n`;
     msg += `📚 *المرحلة:* ${currentStudent.stage}\n`;
     msg += `👥 *المجموعة:* ${currentStudent.group || 'غير محددة'}\n`;
+    
+    // 👈 إضافة حالة الطالب في رسالة الواتساب
+    if (currentStudent.status) {
+      msg += `⚠️ *حالة الطالب:* ${currentStudent.status}\n`;
+    }
+    
     msg += `-----------------------------------\n`;
     msg += `📊 *تفاصيل الدرجات والواجبات:*\n\n`;
 
     let totalObtained = 0;
     let totalMax = 0;
+    let testsCount = 0;
 
     if (currentStudent.grades && Array.isArray(currentStudent.grades)) {
       currentStudent.grades.forEach(g => {
@@ -602,6 +620,7 @@
             if (!isNaN(numScore)) {
               totalObtained += numScore;
               totalMax += parsed.maxScore;
+              testsCount++;
               const pct = Math.round((numScore / parsed.maxScore) * 100);
               const emoji = pct >= 85 ? '🌟' : pct >= 65 ? '👍' : '⚠️';
               msg += `• ${parsed.title}: ${numScore}/${parsed.maxScore} (${pct}%) ${emoji}\n`;
@@ -609,123 +628,4 @@
               msg += `• ${parsed.title}: ${g.score}\n`;
             }
           } else {
-            msg += `• ${parsed.title}: لا يوجد درجة ❌\n`;
-          }
-        }
-      });
-    }
-
-    if (totalMax > 0) {
-      const percentage = Math.round((totalObtained / totalMax) * 100);
-      msg += `\n📈 *المجموع الكلي:* ${totalObtained} / ${totalMax} (${percentage}%)\n`;
-    }
-
-    msg += `\n📌 *لمتابعة الحضور والغياب بشكل لحظي:*\nيرجى طلب بيانات حسابكم الخاصة من إدارة السنتر والدخول عبر المنصة:\n🔗 https://alameed.center/\n`;
-    msg += `\nمع تحيات أ. محمد شحاتة (مدرس المواد الشرعية)`;
-    return msg;
-  }
-
-  function sendWhatsappReport() {
-    const inputPhone = document.getElementById("customPhoneInput").value.trim();
-    let targetPhone = extractDigits(inputPhone);
-
-    if (!targetPhone) {
-      alert("يرجى إدخال رقم هاتف صحيح للإرسال!");
-      return;
-    }
-
-    if (targetPhone.startsWith("0")) targetPhone = "2" + targetPhone;
-    if (!targetPhone.startsWith("20")) targetPhone = "20" + targetPhone;
-
-    const msgText = buildMessageText();
-    const encodedMsg = encodeURIComponent(msgText);
-    window.open(`https://wa.me/${targetPhone}?text=${encodedMsg}`, '_blank');
-  }
-
-  function copyReportText() {
-    const msgText = buildMessageText();
-    if (!msgText) return;
-
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(msgText).then(() => {
-        alert("تم نسخ نص التقرير بنجاح!");
-      }).catch(() => {
-        fallbackCopyText(msgText);
-      });
-    } else {
-      fallbackCopyText(msgText);
-    }
-  }
-
-  function fallbackCopyText(text) {
-    const textArea = document.createElement("textarea");
-    textArea.value = text;
-    document.body.appendChild(textArea);
-    textArea.focus();
-    textArea.select();
-    try {
-      document.execCommand('copy');
-      alert("تم نسخ نص التقرير بنجاح!");
-    } catch (err) {
-      alert("عذراً، فشل النسخ التلقائي.");
-    }
-    document.body.removeChild(textArea);
-  }
-
-  function showAppScreen() {
-    document.getElementById("reportScreen").style.display = "none";
-    document.getElementById("appScreen").style.display = "block";
-  }
-
-  async function exportReportAsPng() {
-    if (!currentStudent) return;
-
-    const overlay = document.getElementById("exportOverlay");
-    overlay.classList.add("active");
-
-    try {
-      const reportElement = document.getElementById("reportContent");
-
-      const originalBg = reportElement.style.background;
-      reportElement.style.background = getComputedStyle(document.body).backgroundColor;
-
-      const canvas = await html2canvas(reportElement, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: null,
-        logging: false,
-        windowWidth: reportElement.scrollWidth,
-        windowHeight: reportElement.scrollHeight
-      });
-
-      reportElement.style.background = originalBg;
-
-      canvas.toBlob((blob) => {
-        if (!blob) {
-          alert("فشل إنشاء الصورة");
-          overlay.classList.remove("active");
-          return;
-        }
-
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        const safeName = (currentStudent.name || "student").replace(/[^\u0600-\u06FF\w\s-]/g, '').trim();
-        link.download = `تقرير-${safeName}.png`;
-        link.href = url;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-
-        overlay.classList.remove("active");
-      }, "image/png", 0.95);
-
-    } catch (err) {
-      console.error("❌ خطأ تصدير PNG:", err);
-      alert("حدث خطأ أثناء إنشاء الصورة. حاول مرة أخرى.");
-      overlay.classList.remove("active");
-    }
-  }
-</script>
-</body>
-</html>
+            msg += `• ${parsed.title
