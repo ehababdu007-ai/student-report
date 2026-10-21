@@ -293,6 +293,12 @@
     return { title: cleanTitle, maxScore: maxGrade };
   }
 
+  // 👈 دالة تحويل الأرقام إلى عربية
+  function toArabicDigits(num) {
+    if (num === null || num === undefined) return "";
+    return String(num).replace(/\d/g, d => "٠١٢٣٤٥٦٧٨٩"[d]);
+  }
+
   function searchStudents() {
     const rawQuery = document.getElementById("searchInput").value;
     const query = normalizeArabic(rawQuery); const queryDigits = extractDigits(rawQuery);
@@ -468,7 +474,7 @@
       let msgText = "";
       if (testFilter && testScore !== null) {
         const pct = Math.round((testScore / testMax) * 100);
-        msgText = `*📋 نتيجة اختبار: ${testFilter}*\n\n👤 *الاسم:* ${student.name}\n📚 *المرحلة:* ${student.stage}\n\n📊 *الدرجة:* ${testScore} / ${testMax} (${pct}%)\n\n✍️ _مع تحيات أ. محمد شحاتة_`;
+        msgText = `*📋 نتيجة اختبار: ${testFilter}*\n\n👤 *الاسم:* ${student.name}\n📚 *المرحلة:* ${student.stage}\n\n📊 *الدرجة:* ${toArabicDigits(testScore)} / ${toArabicDigits(testMax)} (${toArabicDigits(pct)}٪)\n\n✍️ _مع تحيات أ. محمد شحاتة_`;
       } else {
         msgText = buildMessageText();
       }
@@ -481,7 +487,7 @@
       if (testFilter && testScore !== null) {
         const pct = Math.round((testScore / testMax) * 100);
         const color = pct >= 85 ? "var(--success-text)" : pct >= 65 ? "var(--warning-text)" : "var(--danger-text)";
-        scoreBadge = `<span style="font-weight: bold; color: ${color}; font-size: 12px; margin-right: 8px;">(${testScore}/${testMax})</span>`;
+        scoreBadge = `<span style="font-weight: bold; color: ${color}; font-size: 12px; margin-right: 8px;">(${toArabicDigits(testScore)}/${toArabicDigits(testMax)})</span>`;
       }
 
       html += `
@@ -514,18 +520,23 @@
 
   function closeModal() { document.getElementById("modal-overlay").classList.remove("visible"); }
 
+  // 👈 دالة بناء الرسالة النهائية (مع الأرقام العربية والفواصل)
   function buildMessageText() {
     if (!currentStudent) return "";
     const student = currentStudent;
     let msg = `*📋 تقرير المتابعة الأسبوعي*\n🏫 *منصة أ. محمد شحاتة*\n━━━━━━━━━━━━━━━━━━\n\n`;
     msg += `👤 *الاسم:* ${student.name}\n📚 *المرحلة:* ${student.stage}\n👥 *المجموعة:* ${student.group || 'غير محددة'}\n`;
+    
     if (student.status) {
       const isNegative = student.status.includes("موقوف") || student.status.includes("إيقاف") || student.status.includes("مفصول");
       msg += `${isNegative ? "🔴" : "🟢"} *حالة الطالب:* ${student.status}\n`;
     }
+    
     msg += `\n━━━━━━━━━━━━━━━━━━\n\n📊 *سجل الاختبارات والواجبات:*\n\n`;
     
     let totalObtained = 0, totalMax = 0, testsCount = 0, hasActualGrades = false;
+    let gradesList = [];
+
     if (student.grades && Array.isArray(student.grades)) {
       student.grades.forEach(g => {
         const parsed = parseGradeInfo(g.title, student.stage);
@@ -538,17 +549,24 @@
               totalObtained += numScore; totalMax += parsed.maxScore; testsCount++;
               const pct = Math.round((numScore / parsed.maxScore) * 100);
               const emoji = pct >= 85 ? '🌟' : pct >= 65 ? '👍' : '⚠️';
-              msg += `• ${parsed.title}: *${numScore}/${parsed.maxScore}* (${pct}%) ${emoji}\n`;
-            } else { msg += `• ${parsed.title}: ${g.score}\n`; }
+              gradesList.push(`• ${parsed.title}: *${toArabicDigits(numScore)} / ${toArabicDigits(parsed.maxScore)}* (${toArabicDigits(pct)}٪) ${emoji}`);
+            } else { 
+              gradesList.push(`• ${parsed.title}: ${g.score}`); 
+            }
           }
         }
       });
     }
+
+    msg += gradesList.join('\n───────────────────\n');
+
     if (!hasActualGrades) msg += `ℹ️ *لم يتم رصد درجات لهذا الطالب حتى الآن.*\n`;
+    
     if (totalMax > 0) {
       const percentage = Math.round((totalObtained / totalMax) * 100);
-      msg += `\n📈 *الملخص:*\n├ المجموع: *${totalObtained} / ${totalMax}*\n├ النسبة: *${percentage}%*\n└ الاختبارات المؤداة: *${testsCount}*\n`;
+      msg += `\n\n━━━━━━━━━━━━━━━━━━\n\n📈 *الملخص:*\n├ المجموع: *${toArabicDigits(totalObtained)} / ${toArabicDigits(totalMax)}*\n├ النسبة: *${toArabicDigits(percentage)}٪*\n└ الاختبارات المؤداة: *${toArabicDigits(testsCount)}*\n`;
     }
+    
     msg += `\n━━━━━━━━━━━━━━━━━━\n📌 *لمتابعة الحضور والغياب بشكل لحظي:*\n🔗 https://alameed.center/\n\n✍️ _مع تحيات أ. محمد شحاتة_\n_مدرس المواد الشرعية_`;
     return msg;
   }
