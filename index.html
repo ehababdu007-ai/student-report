@@ -22,6 +22,7 @@
       .whatsapp-box { background: #1a202c !important; } .section-title { color: #e2e8f0 !important; border-color: #4a5568 !important; }
       .filter-row select { background: #1a202c !important; color: #e2e8f0 !important; }
       .bulk-item { background: #1a202c !important; border-color: #4a5568 !important; }
+      .checkbox-item { background: #1a202c !important; border-color: #4a5568 !important; }
     }
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 15px; transition: background 0.3s; }
@@ -100,6 +101,9 @@
     .bulk-btn-send { background: #25d366; color: #fff; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: bold; }
     .bulk-btn-send:disabled { background: #a0aec0; cursor: not-allowed; }
     .bulk-btn-copy { background: #3182ce; color: #fff; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; border: none; }
+
+    .checkbox-item { display: flex; align-items: center; gap: 8px; padding: 6px; border-bottom: 1px solid var(--border-color); }
+    .checkbox-item label { margin-bottom: 0; cursor: pointer; flex: 1; }
 
     @media print { .btn-back, .whatsapp-box, .absence-btn, button, .status-container, .brand-subtitle { display: none !important; } body { background: white; padding: 0; } #reportScreen { box-shadow: none; border: none; padding: 0; } .report-card-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; } .score-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; } .perf-summary { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
   </style>
@@ -293,7 +297,6 @@
     return { title: cleanTitle, maxScore: maxGrade };
   }
 
-  // 👈 دالة تحويل الأرقام إلى عربية
   function toArabicDigits(num) {
     if (num === null || num === undefined) return "";
     return String(num).replace(/\d/g, d => "٠١٢٣٤٥٦٧٨٩"[d]);
@@ -414,12 +417,14 @@
       if (parsed) allTests.push(parsed.title);
     });
 
-    let html = `<div style="margin-bottom: 12px;">
-      <label style="font-weight: bold; color: var(--primary-color);">📝 اختر الاختبار لعرض الحضور والدرجة:</label>
-      <select id="testFilterSelect" onchange="renderBulkList()" style="margin-top: 5px; border: 2px solid var(--secondary-color);">
-        <option value="">كل الاختبارات (تقرير شامل)</option>
-        ${allTests.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('')}
-      </select>
+    let html = `<div style="margin-bottom: 12px; max-height: 200px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px; padding: 8px;">
+      <label style="font-weight: bold; color: var(--primary-color); display: block; margin-bottom: 8px;">📝 اختر الاختبارات (يمكن اختيار أكثر من واحد):</label>
+      ${allTests.map((t, i) => `
+        <div class="checkbox-item">
+          <input type="checkbox" id="test_chk_${i}" value="${escapeHtml(t)}" onchange="renderBulkList()">
+          <label for="test_chk_${i}">${escapeHtml(t)}</label>
+        </div>
+      `).join('')}
     </div>
     <div id="bulkListContainer"></div>`;
 
@@ -433,7 +438,13 @@
   function renderBulkList() {
     const stageFilter = document.getElementById("stageFilter").value;
     const groupFilter = document.getElementById("groupFilter").value;
-    const testFilter = document.getElementById("testFilterSelect").value;
+    
+    // 👈 جمع الاختبارات المختارة
+    const selectedTests = [];
+    document.querySelectorAll('#modal-body input[type="checkbox"]:checked').forEach(chk => {
+      selectedTests.push(chk.value);
+    });
+
     const container = document.getElementById("bulkListContainer");
 
     let filtered = studentsData.filter(s => {
@@ -446,20 +457,38 @@
     let count = 0;
 
     filtered.forEach((student) => {
-      let testScore = null;
-      let testMax = null;
+      let customGradesHTML = "";
+      let hasSelectedGrades = false;
+      let totalObtained = 0;
+      let totalMax = 0;
+      let testsCount = 0;
 
-      if (testFilter) {
-        const gradeRecord = student.grades.find(g => parseGradeInfo(g.title, student.stage)?.title === testFilter);
-        if (gradeRecord) {
-          const isNoGrade = (gradeRecord.score === "لا يوجد درجة" || gradeRecord.score === "" || gradeRecord.score === null || gradeRecord.score === undefined);
-          if (isNoGrade) return;
-          testScore = parseFloat(gradeRecord.score);
-          if (isNaN(testScore)) return;
-          testMax = parseGradeInfo(gradeRecord.title, student.stage).maxScore;
-        } else {
-          return;
-        }
+      // إذا تم اختيار اختبارات معينة
+      if (selectedTests.length > 0) {
+        selectedTests.forEach(testName => {
+          const gradeRecord = student.grades.find(g => parseGradeInfo(g.title, student.stage)?.title === testName);
+          if (gradeRecord) {
+            const isNoGrade = (gradeRecord.score === "لا يوجد درجة" || gradeRecord.score === "" || gradeRecord.score === null || gradeRecord.score === undefined);
+            if (!isNoGrade) {
+              hasSelectedGrades = true;
+              const numScore = parseFloat(gradeRecord.score);
+              const maxScore = parseGradeInfo(gradeRecord.title, student.stage).maxScore;
+              if (!isNaN(numScore)) {
+                totalObtained += numScore;
+                totalMax += maxScore;
+                testsCount++;
+                const pct = Math.round((numScore / maxScore) * 100);
+                const emoji = pct >= 85 ? '🌟' : pct >= 65 ? '👍' : '⚠️';
+                customGradesHTML += `• ${testName}: *${toArabicDigits(numScore)} / ${toArabicDigits(maxScore)}* (${toArabicDigits(pct)}٪) ${emoji}\n`;
+              }
+            } else {
+              customGradesHTML += `• ${testName}: لا يوجد درجة ❌\n`;
+            }
+          }
+        });
+        
+        // إذا لم يكن للطالب أي درجة في الاختبارات المختارة، لا نعرضه
+        if (!hasSelectedGrades) return; 
       }
 
       count++;
@@ -471,29 +500,38 @@
 
       const originalStudent = currentStudent;
       currentStudent = student;
+
       let msgText = "";
-      if (testFilter && testScore !== null) {
-        const pct = Math.round((testScore / testMax) * 100);
-        msgText = `*📋 نتيجة اختبار: ${testFilter}*\n\n👤 *الاسم:* ${student.name}\n📚 *المرحلة:* ${student.stage}\n\n📊 *الدرجة:* ${toArabicDigits(testScore)} / ${toArabicDigits(testMax)} (${toArabicDigits(pct)}٪)\n\n✍️ _مع تحيات أ. محمد شحاتة_`;
+      if (selectedTests.length > 0) {
+        // رسالة مخصصة للاختبارات المختارة
+        msgText = `*📋 تقرير المتابعة*\n🏫 *منصة أ. محمد شحاتة*\n━━━━━━━━━━━━━━━━━━\n\n`;
+        msgText += `👤 *الاسم:* ${student.name}\n📚 *المرحلة:* ${student.stage}\n👥 *المجموعة:* ${student.group || 'غير محددة'}\n`;
+        if (student.status) {
+          const isNegative = student.status.includes("موقوف") || student.status.includes("إيقاف") || student.status.includes("مفصول");
+          msgText += `${isNegative ? "🔴" : "🟢"} *حالة الطالب:* ${student.status}\n`;
+        }
+        msgText += `\n━━━━━━━━━━━━━━━━━━\n\n📊 *الدرجات المختارة:*\n\n`;
+        msgText += customGradesHTML;
+        
+        if (totalMax > 0) {
+          const percentage = Math.round((totalObtained / totalMax) * 100);
+          msgText += `\n📈 *الملخص:*\n├ المجموع: *${toArabicDigits(totalObtained)} / ${toArabicDigits(totalMax)}*\n├ النسبة: *${toArabicDigits(percentage)}٪*\n└ الاختبارات المؤداة: *${toArabicDigits(testsCount)}*\n`;
+        }
+        msgText += `\n━━━━━━━━━━━━━━━━━━\n📌 *لمتابعة الحضور والغياب:*\n🔗 https://alameed.center/\n\n✍️ _مع تحيات أ. محمد شحاتة_\n_مدرس المواد الشرعية_`;
       } else {
+        // الرسالة الشاملة
         msgText = buildMessageText();
       }
+      
       currentStudent = originalStudent;
 
       const encodedMsg = encodeURIComponent(msgText);
       const waLink = hasPhone ? `https://wa.me/${targetPhone}?text=${encodedMsg}` : "#";
 
-      let scoreBadge = "";
-      if (testFilter && testScore !== null) {
-        const pct = Math.round((testScore / testMax) * 100);
-        const color = pct >= 85 ? "var(--success-text)" : pct >= 65 ? "var(--warning-text)" : "var(--danger-text)";
-        scoreBadge = `<span style="font-weight: bold; color: ${color}; font-size: 12px; margin-right: 8px;">(${toArabicDigits(testScore)}/${toArabicDigits(testMax)})</span>`;
-      }
-
       html += `
         <div class="bulk-item">
           <div style="flex: 1;">
-            <div style="font-weight: bold; font-size: 14px; color: var(--text-color);">${count}. ${escapeHtml(student.name)} ${scoreBadge}</div>
+            <div style="font-weight: bold; font-size: 14px; color: var(--text-color);">${count}. ${escapeHtml(student.name)}</div>
             <div style="font-size: 11px; color: var(--muted-color);">📱 ${phone || 'غير مسجل'}</div>
           </div>
           <div class="bulk-btns">
@@ -504,7 +542,7 @@
       `;
     });
 
-    if (count === 0) { html += `<div style="text-align:center; color: var(--muted-color); padding: 20px;">لا يوجد طلاب مطابقين لهذا الفلتر (ربما الجميع غائب).</div>`; }
+    if (count === 0) { html += `<div style="text-align:center; color: var(--muted-color); padding: 20px;">لا يوجد طلاب مطابقين (ربما الجميع غائب).</div>`; }
     html += `</div>`;
     container.innerHTML = html;
   }
@@ -520,7 +558,6 @@
 
   function closeModal() { document.getElementById("modal-overlay").classList.remove("visible"); }
 
-  // 👈 دالة بناء الرسالة النهائية (مع الأرقام العربية والفواصل)
   function buildMessageText() {
     if (!currentStudent) return "";
     const student = currentStudent;
