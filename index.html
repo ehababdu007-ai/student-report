@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>منصة الأستاذ محمد شحاتة - متابعة الطلاب</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     :root {
       --primary-color: #1a365d; --secondary-color: #2b6cb0; --bg-color: #f7fafc;
@@ -23,6 +24,7 @@
       .filter-row select { background: #1a202c !important; color: #e2e8f0 !important; }
       .bulk-item { background: #1a202c !important; border-color: #4a5568 !important; }
       .checkbox-item { background: #1a202c !important; border-color: #4a5568 !important; }
+      .exam-report-card { background: #1a202c !important; border-color: #4a5568 !important; }
     }
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 15px; transition: background 0.3s; }
@@ -52,6 +54,7 @@
 
     .btn-whatsapp { background-color: #25d366; } .btn-copy { background-color: #3182ce; } .btn-print { background-color: #805ad5; } .btn-png { background-color: #38a169; }
     .btn-back { background-color: #718096; width: auto; padding: 8px 16px; font-size: 13px; margin-bottom: 15px; display: inline-flex; align-items: center; gap: 5px; }
+    .btn-exam-report { background-color: #d69e2e; color: #fff; margin-bottom: 15px; }
 
     .student-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px; margin-bottom: 10px; cursor: pointer; transition: 0.2s; display: flex; justify-content: space-between; align-items: center; }
     .student-card:hover { border-color: var(--secondary-color); transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
@@ -105,6 +108,17 @@
     .checkbox-item { display: flex; align-items: center; gap: 8px; padding: 6px; border-bottom: 1px solid var(--border-color); }
     .checkbox-item label { margin-bottom: 0; cursor: pointer; flex: 1; }
 
+    .exam-report-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 18px; margin-bottom: 20px; }
+    .exam-stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 15px; }
+    .exam-stat-box { background: var(--input-bg); padding: 10px; border-radius: 8px; text-align: center; border: 1px solid var(--border-color); }
+    .exam-stat-val { font-size: 20px; font-weight: 800; color: var(--primary-color); }
+    .exam-stat-lbl { font-size: 11px; color: var(--muted-color); }
+    .student-score-row { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid var(--border-color); font-size: 13px; }
+    .student-score-row:last-child { border-bottom: none; }
+    .student-score-name { font-weight: bold; }
+    .student-score-val { font-weight: 800; }
+    .chart-container { position: relative; height: 200px; width: 100%; margin-bottom: 15px; }
+
     @media print { .btn-back, .whatsapp-box, .absence-btn, button, .status-container, .brand-subtitle { display: none !important; } body { background: white; padding: 0; } #reportScreen { box-shadow: none; border: none; padding: 0; } .report-card-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; } .score-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; } .perf-summary { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
   </style>
 </head>
@@ -147,6 +161,10 @@
       📲 إرسال تقارير الصف/المجموعة الحالية
     </button>
 
+    <button id="examReportBtn" onclick="showExamReportModal()" class="btn-exam-report" style="margin-top: 10px;">
+      📊 عرض تقرير امتحان معين
+    </button>
+
     <div id="resultsList" style="margin-top: 15px;"></div>
   </div>
 
@@ -161,6 +179,17 @@
       <button class="btn-print" onclick="window.print()">🖨️ طباعة التقرير</button>
     </div>
   </div>
+
+  <!-- شاشة تقرير الامتحان -->
+  <div id="examReportScreen" style="display: none; background: var(--card-bg); padding: 22px; border-radius: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid var(--border-color);">
+    <button class="btn-back" onclick="showAppScreen()">← العودة للبحث</button>
+    <div id="examReportContent"></div>
+    <div class="whatsapp-box">
+      <button class="btn-png" onclick="exportExamReportAsPng()">🖼️ تصدير تقرير الامتحان كصورة PNG</button>
+      <button class="btn-print" onclick="window.print()">🖨️ طباعة التقرير</button>
+    </div>
+  </div>
+
 </div>
 
 <div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)closeModal()">
@@ -179,6 +208,7 @@
 
   let studentsData = [];
   let currentStudent = null;
+  let currentExamReportData = null;
 
   window.addEventListener("DOMContentLoaded", () => { initData(); });
 
@@ -339,6 +369,7 @@
   function renderReport(student) {
     currentStudent = student;
     document.getElementById("appScreen").style.display = "none";
+    document.getElementById("examReportScreen").style.display = "none";
     document.getElementById("reportScreen").style.display = "block";
     document.getElementById("customPhoneInput").value = extractDigits(student.parentPhone || student.studentPhone);
 
@@ -439,7 +470,6 @@
     const stageFilter = document.getElementById("stageFilter").value;
     const groupFilter = document.getElementById("groupFilter").value;
     
-    // 👈 جمع الاختبارات المختارة
     const selectedTests = [];
     document.querySelectorAll('#modal-body input[type="checkbox"]:checked').forEach(chk => {
       selectedTests.push(chk.value);
@@ -463,7 +493,6 @@
       let totalMax = 0;
       let testsCount = 0;
 
-      // إذا تم اختيار اختبارات معينة
       if (selectedTests.length > 0) {
         selectedTests.forEach(testName => {
           const gradeRecord = student.grades.find(g => parseGradeInfo(g.title, student.stage)?.title === testName);
@@ -487,7 +516,6 @@
           }
         });
         
-        // إذا لم يكن للطالب أي درجة في الاختبارات المختارة، لا نعرضه
         if (!hasSelectedGrades) return; 
       }
 
@@ -503,7 +531,6 @@
 
       let msgText = "";
       if (selectedTests.length > 0) {
-        // رسالة مخصصة للاختبارات المختارة
         msgText = `*📋 تقرير المتابعة*\n🏫 *منصة أ. محمد شحاتة*\n━━━━━━━━━━━━━━━━━━\n\n`;
         msgText += `👤 *الاسم:* ${student.name}\n📚 *المرحلة:* ${student.stage}\n👥 *المجموعة:* ${student.group || 'غير محددة'}\n`;
         if (student.status) {
@@ -515,11 +542,10 @@
         
         if (totalMax > 0) {
           const percentage = Math.round((totalObtained / totalMax) * 100);
-          msgText += `\n📈 *الملخص:*\n├ المجموع: *${toArabicDigits(totalObtained)} / ${toArabicDigits(totalMax)}*\n├ النسبة: *${toArabicDigits(percentage)}٪*\n└ الاختبارات المؤداة: *${toArabicDigits(testsCount)}*\n`;
+          msgText += `\n📈 *الملخص:*\n├ المجموع: *${toArabicDigits(totalObtained)} / ${toArabicDigits(totalMax)}*\n├ النسبة: *${toArabicDigits(percentage)}٪*\n└ الاختبارات : *${toArabicDigits(testsCount)}*\n`;
         }
         msgText += `\n━━━━━━━━━━━━━━━━━━\n📌 *لمتابعة الحضور والغياب:*\n🔗 https://alameed.center/\n\n✍️ _مع تحيات أ. محمد شحاتة_\n_مدرس المواد الشرعية_`;
       } else {
-        // الرسالة الشاملة
         msgText = buildMessageText();
       }
       
@@ -601,7 +627,7 @@
     
     if (totalMax > 0) {
       const percentage = Math.round((totalObtained / totalMax) * 100);
-      msg += `\n\n━━━━━━━━━━━━━━━━━━\n\n📈 *الملخص:*\n├ المجموع: *${toArabicDigits(totalObtained)} / ${toArabicDigits(totalMax)}*\n├ النسبة: *${toArabicDigits(percentage)}٪*\n└ الاختبارات المؤداة: *${toArabicDigits(testsCount)}*\n`;
+      msg += `\n\n━━━━━━━━━━━━━━━━━━\n\n📈 *الملخص:*\n├ المجموع: *${toArabicDigits(totalObtained)} / ${toArabicDigits(totalMax)}*\n├ النسبة: *${toArabicDigits(percentage)}٪*\n└ الاختبارات : *${toArabicDigits(testsCount)}*\n`;
     }
     
     msg += `\n━━━━━━━━━━━━━━━━━━\n📌 *لمتابعة الحضور والغياب بشكل لحظي:*\n🔗 https://alameed.center/\n\n✍️ _مع تحيات أ. محمد شحاتة_\n_مدرس المواد الشرعية_`;
@@ -634,6 +660,7 @@
 
   function showAppScreen() {
     document.getElementById("reportScreen").style.display = "none";
+    document.getElementById("examReportScreen").style.display = "none";
     document.getElementById("appScreen").style.display = "block";
   }
 
@@ -653,6 +680,211 @@
       }, "image/png", 0.95);
     } catch (err) { alert("حدث خطأ."); overlay.classList.remove("active"); }
   }
+
+  // ============================================================
+  // 📊 دوال تقرير الامتحان
+  // ============================================================
+
+  function showExamReportModal() {
+    const allTests = [];
+    const uniqueTests = new Set();
+    studentsData.forEach(s => {
+      if (s.grades) {
+        s.grades.forEach(g => {
+          const parsed = parseGradeInfo(g.title, s.stage);
+          if (parsed && !uniqueTests.has(parsed.title)) {
+            uniqueTests.add(parsed.title);
+            allTests.push(parsed.title);
+          }
+        });
+      }
+    });
+
+    if (allTests.length === 0) { alert("لا توجد اختبارات مسجلة."); return; }
+
+    let html = `<div style="margin-bottom: 12px;">
+      <label style="font-weight: bold; color: var(--primary-color);">📝 اختر الامتحان:</label>
+      <select id="examSelect" style="margin-top: 5px; border: 2px solid var(--secondary-color);">
+        ${allTests.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('')}
+      </select>
+    </div>
+    <button onclick="generateExamReport()" style="background-color: #d69e2e; color: #fff;">عرض التقرير</button>`;
+
+    document.getElementById("modal-title").innerText = `📊 تقرير امتحان`;
+    document.getElementById("modal-body").innerHTML = html;
+    document.getElementById("modal-overlay").classList.add("visible");
+  }
+
+  function generateExamReport() {
+    const examName = document.getElementById("examSelect").value;
+    if (!examName) return;
+
+    closeModal();
+    
+    // تصفية الطلاب حسب المرحلة والمجموعة المختارة (إن وجدت)
+    const stageFilter = document.getElementById("stageFilter").value;
+    const groupFilter = document.getElementById("groupFilter").value;
+
+    let filteredStudents = studentsData.filter(s => {
+      if (stageFilter && s.stage !== stageFilter) return false;
+      if (groupFilter && s.group !== groupFilter) return false;
+      return true;
+    });
+
+    let scores = [];
+    let absentStudents = [];
+    
+    filteredStudents.forEach(student => {
+      const gradeRecord = student.grades.find(g => parseGradeInfo(g.title, student.stage)?.title === examName);
+      if (gradeRecord) {
+        const isNoGrade = (gradeRecord.score === "لا يوجد درجة" || gradeRecord.score === "" || gradeRecord.score === null || gradeRecord.score === undefined);
+        if (isNoGrade) {
+          absentStudents.push(student);
+        } else {
+          const numScore = parseFloat(gradeRecord.score);
+          if (!isNaN(numScore)) {
+            const maxScore = parseGradeInfo(gradeRecord.title, student.stage).maxScore;
+            scores.push({ student, score: numScore, maxScore });
+          } else {
+             absentStudents.push(student);
+          }
+        }
+      } else {
+        absentStudents.push(student);
+      }
+    });
+
+    // ترتيب الطلاب تنازلياً
+    scores.sort((a, b) => b.score - a.score);
+
+    // الإحصائيات
+    let highest = scores.length > 0 ? scores[0].score : 0;
+    let lowest = scores.length > 0 ? scores[scores.length - 1].score : 0;
+    let total = scores.reduce((sum, item) => sum + item.score, 0);
+    let average = scores.length > 0 ? (total / scores.length).toFixed(1) : 0;
+    
+    // توزيع الدرجات
+    let excellent = 0, good = 0, poor = 0;
+    scores.forEach(item => {
+      const pct = item.score / item.maxScore;
+      if (pct >= 0.85) excellent++;
+      else if (pct >= 0.65) good++;
+      else poor++;
+    });
+
+    currentExamReportData = { examName, scores, absentStudents, highest, lowest, average, excellent, good, poor };
+
+    renderExamReportUI();
+  }
+
+  function renderExamReportUI() {
+    const data = currentExamReportData;
+    if (!data) return;
+
+    const { examName, scores, absentStudents, highest, lowest, average, excellent, good, poor } = data;
+
+    let studentsHTML = "";
+    scores.forEach((item, index) => {
+      const pct = Math.round((item.score / item.maxScore) * 100);
+      let badgeClass = pct >= 85 ? "score-excellent" : pct >= 65 ? "score-good" : "score-poor";
+      studentsHTML += `
+        <div class="student-score-row">
+          <span class="student-score-name">${index + 1}. ${escapeHtml(item.student.name)}</span>
+          <span class="student-score-val"><span class="score-badge ${badgeClass}">${toArabicDigits(item.score)} / ${toArabicDigits(item.maxScore)}</span></span>
+        </div>
+      `;
+    });
+
+    let absentHTML = "";
+    absentStudents.forEach((student, index) => {
+      absentHTML += `
+        <div class="student-score-row" style="color: var(--danger-text);">
+          <span class="student-score-name">${index + 1}. ${escapeHtml(student.name)}</span>
+          <span class="student-score-val">غائب</span>
+        </div>
+      `;
+    });
+
+    document.getElementById("examReportContent").innerHTML = `
+      <div class="report-card-header" style="text-align: center;">
+        <h3>📊 تقرير امتحان: ${escapeHtml(examName)}</h3>
+      </div>
+
+      <div class="exam-report-card">
+        <div class="exam-stats-grid">
+          <div class="exam-stat-box"><div class="exam-stat-val">${toArabicDigits(highest)}</div><div class="exam-stat-lbl">أعلى درجة</div></div>
+          <div class="exam-stat-box"><div class="exam-stat-val">${toArabicDigits(lowest)}</div><div class="exam-stat-lbl">أدنى درجة</div></div>
+          <div class="exam-stat-box"><div class="exam-stat-val">${toArabicDigits(average)}</div><div class="exam-stat-lbl">المتوسط</div></div>
+          <div class="exam-stat-box"><div class="exam-stat-val">${toArabicDigits(scores.length)}</div><div class="exam-stat-lbl">عدد الحاضرين</div></div>
+        </div>
+        
+        <div class="chart-container">
+          <canvas id="examChart"></canvas>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+           <button onclick="toggleAbsentees()" style="background: var(--danger-bg); color: var(--danger-text); border: 1px solid var(--danger-text); flex: 1;">👁️ عرض/إخفاء الغائبين (${toArabicDigits(absentStudents.length)})</button>
+        </div>
+
+        <div id="absentListContainer" style="display: none; margin-bottom: 15px; border: 1px solid var(--danger-text); border-radius: 8px; padding: 10px;">
+          ${absentHTML || '<div style="text-align:center;">لا يوجد غائبون</div>'}
+        </div>
+
+        <div class="section-title"><span>ترتيب الطلاب (تنازلياً)</span></div>
+        <div style="max-height: 400px; overflow-y: auto;">
+          ${studentsHTML || '<div style="text-align:center;">لا توجد درجات مسجلة</div>'}
+        </div>
+      </div>
+    `;
+
+    document.getElementById("appScreen").style.display = "none";
+    document.getElementById("reportScreen").style.display = "none";
+    document.getElementById("examReportScreen").style.display = "block";
+
+    // رسم البياني
+    const ctx = document.getElementById('examChart').getContext('2d');
+    if (window.myChart) window.myChart.destroy();
+    window.myChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['ممتاز (85%+)', 'جيد (65%-85%)', 'ضعيف (<65%)'],
+        datasets: [{
+          label: 'عدد الطلاب',
+          data: [excellent, good, poor],
+          backgroundColor: ['#38a169', '#d69e2e', '#e53e3e'],
+          borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+      }
+    });
+  }
+
+  function toggleAbsentees() {
+    const container = document.getElementById("absentListContainer");
+    container.style.display = container.style.display === "none" ? "block" : "none";
+  }
+
+  async function exportExamReportAsPng() {
+    const overlay = document.getElementById("exportOverlay"); overlay.classList.add("active");
+    try {
+      const el = document.getElementById("examReportContent");
+      const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: null });
+      canvas.toBlob((blob) => {
+        if (!blob) { alert("فشل إنشاء الصورة"); overlay.classList.remove("active"); return; }
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.download = `تقرير-امتحان-${currentExamReportData.examName}.png`;
+        link.href = url; document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url);
+        overlay.classList.remove("active");
+      }, "image/png", 0.95);
+    } catch (err) { alert("حدث خطأ."); overlay.classList.remove("active"); }
+  }
+
 </script>
 </body>
 </html>
