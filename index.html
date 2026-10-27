@@ -38,7 +38,7 @@
     .btn-refresh-sync { background: #e2e8f0; border: none; cursor: pointer; font-size: 12px; padding: 4px 10px; border-radius: 20px; color: #4a5568; font-weight: bold; transition: 0.2s; }
     .btn-refresh-sync:hover { background-color: #cbd5e0; }
 
-    #appScreen, #reportScreen { background: var(--card-bg); padding: 22px; border-radius: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid var(--border-color); }
+    #appScreen, #reportScreen, #examReportScreen { background: var(--card-bg); padding: 22px; border-radius: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid var(--border-color); }
 
     .input-group { margin-bottom: 15px; }
     label { display: block; margin-bottom: 6px; font-weight: bold; font-size: 13px; color: var(--muted-color); }
@@ -118,6 +118,8 @@
     .student-score-name { font-weight: bold; }
     .student-score-val { font-weight: 800; }
     .chart-container { position: relative; height: 200px; width: 100%; margin-bottom: 15px; }
+    .arrow-up { color: #38a169; font-weight: bold; }
+    .arrow-down { color: #e53e3e; font-weight: bold; }
 
     @media print { .btn-back, .whatsapp-box, .absence-btn, button, .status-container, .brand-subtitle { display: none !important; } body { background: white; padding: 0; } #reportScreen { box-shadow: none; border: none; padding: 0; } .report-card-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; } .score-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; } .perf-summary { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
   </style>
@@ -180,8 +182,7 @@
     </div>
   </div>
 
-  <!-- شاشة تقرير الامتحان -->
-  <div id="examReportScreen" style="display: none; background: var(--card-bg); padding: 22px; border-radius: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid var(--border-color);">
+  <div id="examReportScreen" style="display: none;">
     <button class="btn-back" onclick="showAppScreen()">← العودة للبحث</button>
     <div id="examReportContent"></div>
     <div class="whatsapp-box">
@@ -443,9 +444,17 @@
     if (studentsInClass.length === 0) { alert("لا يوجد طلاب في هذا التصنيف."); return; }
 
     const allTests = [];
-    studentsInClass[0].grades.forEach(g => {
-      const parsed = parseGradeInfo(g.title, studentsInClass[0].stage);
-      if (parsed) allTests.push(parsed.title);
+    const uniqueTests = new Set();
+    studentsInClass.forEach(s => {
+      if (s.grades) {
+        s.grades.forEach(g => {
+          const parsed = parseGradeInfo(g.title, s.stage);
+          if (parsed && !uniqueTests.has(parsed.title)) {
+            uniqueTests.add(parsed.title);
+            allTests.push(parsed.title);
+          }
+        });
+      }
     });
 
     let html = `<div style="margin-bottom: 12px; max-height: 200px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px; padding: 8px;">
@@ -483,15 +492,31 @@
       return true;
     });
 
+    // إذا تم اختيار اختبارات، نحتاج لترتيب الطلاب حسب الدرجة
+    if (selectedTests.length === 1) {
+      filtered.sort((a, b) => {
+        const gradeA = a.grades.find(g => parseGradeInfo(g.title, a.stage)?.title === selectedTests[0])?.score;
+        const gradeB = b.grades.find(g => parseGradeInfo(g.title, b.stage)?.title === selectedTests[0])?.score;
+        const numA = parseFloat(gradeA);
+        const numB = parseFloat(gradeB);
+        if (isNaN(numA) && isNaN(numB)) return 0;
+        if (isNaN(numA)) return 1;
+        if (isNaN(numB)) return -1;
+        return numB - numA;
+      });
+    }
+
     let html = `<div style="max-height: 55vh; overflow-y: auto; padding-right: 5px;">`;
     let count = 0;
 
-    filtered.forEach((student) => {
+    filtered.forEach((student, index) => {
       let customGradesHTML = "";
       let hasSelectedGrades = false;
       let totalObtained = 0;
       let totalMax = 0;
       let testsCount = 0;
+      let displayScore = "";
+      let arrowIcon = "";
 
       if (selectedTests.length > 0) {
         selectedTests.forEach(testName => {
@@ -502,6 +527,7 @@
               hasSelectedGrades = true;
               const numScore = parseFloat(gradeRecord.score);
               const maxScore = parseGradeInfo(gradeRecord.title, student.stage).maxScore;
+              
               if (!isNaN(numScore)) {
                 totalObtained += numScore;
                 totalMax += maxScore;
@@ -509,14 +535,24 @@
                 const pct = Math.round((numScore / maxScore) * 100);
                 const emoji = pct >= 85 ? '🌟' : pct >= 65 ? '👍' : '⚠️';
                 customGradesHTML += `• ${testName}: *${toArabicDigits(numScore)} / ${toArabicDigits(maxScore)}* (${toArabicDigits(pct)}٪) ${emoji}\n`;
+                if (selectedTests.length === 1) displayScore = `${toArabicDigits(numScore)} / ${toArabicDigits(maxScore)}`;
+              } else {
+                // إذا كانت الدرجة نصية مثل "ضعيف" أو "غائب"
+                customGradesHTML += `• ${testName}: ${escapeHtml(gradeRecord.score)}\n`;
+                if (selectedTests.length === 1) displayScore = escapeHtml(gradeRecord.score);
               }
             } else {
               customGradesHTML += `• ${testName}: لا يوجد درجة ❌\n`;
+              if (selectedTests.length === 1) displayScore = "غائب";
             }
           }
         });
         
-        if (!hasSelectedGrades) return; 
+        if (!hasSelectedGrades && selectedTests.length === 1) return; 
+
+        // إضافة سهم الترتيب
+        if (selectedTests.length === 1 && index === 0) arrowIcon = '<span class="arrow-up">▲</span>';
+        else if (selectedTests.length === 1 && index === filtered.length - 1) arrowIcon = '<span class="arrow-down">▼</span>';
       }
 
       count++;
@@ -542,9 +578,9 @@
         
         if (totalMax > 0) {
           const percentage = Math.round((totalObtained / totalMax) * 100);
-          msgText += `\n📈 *الملخص:*\n├ المجموع: *${toArabicDigits(totalObtained)} / ${toArabicDigits(totalMax)}*\n├ النسبة: *${toArabicDigits(percentage)}٪*\n└ الاختبارات : *${toArabicDigits(testsCount)}*\n`;
+          msgText += `\n📈 *الملخص:*\n├ المجموع: *${toArabicDigits(totalObtained)} / ${toArabicDigits(totalMax)}*\n├ النسبة: *${toArabicDigits(percentage)}٪*\n└ الاختبارات المؤداة: *${toArabicDigits(testsCount)}*\n`;
         }
-        msgText += `\n━━━━━━━━━━━━━━━━━━\n📌 *لمتابعة الحضور والغياب:*\n🔗 https://alameed.center/\n\n✍️ _مع تحيات أ. محمد شحاتة_\n_مدرس المواد الشرعية_`;
+        msgText += `\n━━━━━━━━━━━━━━━━━━\n📌 *لمتابعة الحضور والغياب:*\n🔗 https://alameed.center/\n\n✍️ _مع تحيات أ. محمد شحاتة_\n_مدرس الشرعية_`;
       } else {
         msgText = buildMessageText();
       }
@@ -557,7 +593,7 @@
       html += `
         <div class="bulk-item">
           <div style="flex: 1;">
-            <div style="font-weight: bold; font-size: 14px; color: var(--text-color);">${count}. ${escapeHtml(student.name)}</div>
+            <div style="font-weight: bold; font-size: 14px; color: var(--text-color);">${count}. ${escapeHtml(student.name)} ${displayScore ? `(${displayScore})` : ''} ${arrowIcon}</div>
             <div style="font-size: 11px; color: var(--muted-color);">📱 ${phone || 'غير مسجل'}</div>
           </div>
           <div class="bulk-btns">
@@ -627,7 +663,7 @@
     
     if (totalMax > 0) {
       const percentage = Math.round((totalObtained / totalMax) * 100);
-      msg += `\n\n━━━━━━━━━━━━━━━━━━\n\n📈 *الملخص:*\n├ المجموع: *${toArabicDigits(totalObtained)} / ${toArabicDigits(totalMax)}*\n├ النسبة: *${toArabicDigits(percentage)}٪*\n└ الاختبارات : *${toArabicDigits(testsCount)}*\n`;
+      msg += `\n\n━━━━━━━━━━━━━━━━━━\n\n📈 *الملخص:*\n├ المجموع: *${toArabicDigits(totalObtained)} / ${toArabicDigits(totalMax)}*\n├ النسبة: *${toArabicDigits(percentage)}٪*\n└ الاختبارات المؤداة: *${toArabicDigits(testsCount)}*\n`;
     }
     
     msg += `\n━━━━━━━━━━━━━━━━━━\n📌 *لمتابعة الحضور والغياب بشكل لحظي:*\n🔗 https://alameed.center/\n\n✍️ _مع تحيات أ. محمد شحاتة_\n_مدرس المواد الشرعية_`;
@@ -682,30 +718,29 @@
   }
 
   // ============================================================
-  // 📊 دوال تقرير الامتحان
+  // 📊 تقرير الامتحان
   // ============================================================
 
   function showExamReportModal() {
-    const allTests = [];
-    const uniqueTests = new Set();
-    studentsData.forEach(s => {
-      if (s.grades) {
-        s.grades.forEach(g => {
-          const parsed = parseGradeInfo(g.title, s.stage);
-          if (parsed && !uniqueTests.has(parsed.title)) {
-            uniqueTests.add(parsed.title);
-            allTests.push(parsed.title);
-          }
-        });
-      }
-    });
-
-    if (allTests.length === 0) { alert("لا توجد اختبارات مسجلة."); return; }
-
+    const stages = [...new Set(studentsData.map(s => (s.stage || '').trim()).filter(Boolean))].sort();
+    
     let html = `<div style="margin-bottom: 12px;">
+      <label style="font-weight: bold; color: var(--primary-color);">📖 اختر المرحلة:</label>
+      <select id="examStageSelect" onchange="updateExamGroups()" style="margin-top: 5px; border: 2px solid var(--secondary-color);">
+        <option value="">كل المراحل</option>
+        ${stages.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('')}
+      </select>
+    </div>
+    <div style="margin-bottom: 12px;">
+      <label style="font-weight: bold; color: var(--primary-color);">👥 اختر المجموعة:</label>
+      <select id="examGroupSelect" onchange="updateExamTests()" style="margin-top: 5px; border: 2px solid var(--secondary-color);">
+        <option value="">كل المجموعات</option>
+      </select>
+    </div>
+    <div style="margin-bottom: 12px;">
       <label style="font-weight: bold; color: var(--primary-color);">📝 اختر الامتحان:</label>
       <select id="examSelect" style="margin-top: 5px; border: 2px solid var(--secondary-color);">
-        ${allTests.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('')}
+        <option value="">اختر الامتحان</option>
       </select>
     </div>
     <button onclick="generateExamReport()" style="background-color: #d69e2e; color: #fff;">عرض التقرير</button>`;
@@ -713,21 +748,56 @@
     document.getElementById("modal-title").innerText = `📊 تقرير امتحان`;
     document.getElementById("modal-body").innerHTML = html;
     document.getElementById("modal-overlay").classList.add("visible");
+
+    updateExamGroups();
+  }
+
+  function updateExamGroups() {
+    const stageVal = document.getElementById("examStageSelect").value;
+    let filtered = studentsData;
+    if (stageVal) filtered = filtered.filter(s => s.stage === stageVal);
+    
+    const groups = [...new Set(filtered.map(s => s.group).filter(Boolean))].sort();
+    const groupSelect = document.getElementById("examGroupSelect");
+    groupSelect.innerHTML = '<option value="">كل المجموعات</option>' + groups.map(g => `<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`).join('');
+    
+    updateExamTests();
+  }
+
+  function updateExamTests() {
+    const stageVal = document.getElementById("examStageSelect").value;
+    const groupVal = document.getElementById("examGroupSelect").value;
+    let filtered = studentsData;
+    if (stageVal) filtered = filtered.filter(s => s.stage === stageVal);
+    if (groupVal) filtered = filtered.filter(s => s.group === groupVal);
+    
+    const uniqueTests = new Set();
+    filtered.forEach(s => {
+      if (s.grades) {
+        s.grades.forEach(g => {
+          const parsed = parseGradeInfo(g.title, s.stage);
+          if (parsed) uniqueTests.add(parsed.title);
+        });
+      }
+    });
+
+    const allTests = [...uniqueTests].sort();
+    const examSelect = document.getElementById("examSelect");
+    examSelect.innerHTML = '<option value="">اختر الامتحان</option>' + allTests.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
   }
 
   function generateExamReport() {
+    const stageVal = document.getElementById("examStageSelect").value;
+    const groupVal = document.getElementById("examGroupSelect").value;
     const examName = document.getElementById("examSelect").value;
-    if (!examName) return;
+
+    if (!examName) { alert("يرجى اختيار امتحان أولاً."); return; }
 
     closeModal();
     
-    // تصفية الطلاب حسب المرحلة والمجموعة المختارة (إن وجدت)
-    const stageFilter = document.getElementById("stageFilter").value;
-    const groupFilter = document.getElementById("groupFilter").value;
-
     let filteredStudents = studentsData.filter(s => {
-      if (stageFilter && s.stage !== stageFilter) return false;
-      if (groupFilter && s.group !== groupFilter) return false;
+      if (stageVal && s.stage !== stageVal) return false;
+      if (groupVal && s.group !== groupVal) return false;
       return true;
     });
 
@@ -746,7 +816,8 @@
             const maxScore = parseGradeInfo(gradeRecord.title, student.stage).maxScore;
             scores.push({ student, score: numScore, maxScore });
           } else {
-             absentStudents.push(student);
+            // نص مثل "ضعيف" أو "غائب" يعتبر غياب أو غير محسوب
+            absentStudents.push(student);
           }
         }
       } else {
@@ -754,16 +825,13 @@
       }
     });
 
-    // ترتيب الطلاب تنازلياً
     scores.sort((a, b) => b.score - a.score);
 
-    // الإحصائيات
     let highest = scores.length > 0 ? scores[0].score : 0;
     let lowest = scores.length > 0 ? scores[scores.length - 1].score : 0;
     let total = scores.reduce((sum, item) => sum + item.score, 0);
     let average = scores.length > 0 ? (total / scores.length).toFixed(1) : 0;
     
-    // توزيع الدرجات
     let excellent = 0, good = 0, poor = 0;
     scores.forEach(item => {
       const pct = item.score / item.maxScore;
@@ -841,7 +909,6 @@
     document.getElementById("reportScreen").style.display = "none";
     document.getElementById("examReportScreen").style.display = "block";
 
-    // رسم البياني
     const ctx = document.getElementById('examChart').getContext('2d');
     if (window.myChart) window.myChart.destroy();
     window.myChart = new Chart(ctx, {
