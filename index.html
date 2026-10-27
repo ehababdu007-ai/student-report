@@ -118,8 +118,6 @@
     .student-score-name { font-weight: bold; }
     .student-score-val { font-weight: 800; }
     .chart-container { position: relative; height: 200px; width: 100%; margin-bottom: 15px; }
-    .arrow-up { color: #38a169; font-weight: bold; }
-    .arrow-down { color: #e53e3e; font-weight: bold; }
 
     @media print { .btn-back, .whatsapp-box, .absence-btn, button, .status-container, .brand-subtitle { display: none !important; } body { background: white; padding: 0; } #reportScreen { box-shadow: none; border: none; padding: 0; } .report-card-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; } .score-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; } .perf-summary { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
   </style>
@@ -178,7 +176,7 @@
       <button class="btn-whatsapp" onclick="sendWhatsappReport()">إرسال التقرير عبر واتساب</button>
       <button class="btn-png" onclick="exportReportAsPng()">🖼️ تصدير التقرير كصورة PNG</button>
       <button class="btn-copy" onclick="copyReportText()">📋 نسخ نص التقرير</button>
-      <button class="btn-print" onclick="window.print()">🖨️ طباعة التقرير</button>
+      <button class="btn-print" onclick="window.print()">🖨️ طباعة / تصدير PDF</button>
     </div>
   </div>
 
@@ -187,7 +185,7 @@
     <div id="examReportContent"></div>
     <div class="whatsapp-box">
       <button class="btn-png" onclick="exportExamReportAsPng()">🖼️ تصدير تقرير الامتحان كصورة PNG</button>
-      <button class="btn-print" onclick="window.print()">🖨️ طباعة التقرير</button>
+      <button class="btn-print" onclick="window.print()">🖨️ طباعة / تصدير PDF</button>
     </div>
   </div>
 
@@ -444,17 +442,9 @@
     if (studentsInClass.length === 0) { alert("لا يوجد طلاب في هذا التصنيف."); return; }
 
     const allTests = [];
-    const uniqueTests = new Set();
-    studentsInClass.forEach(s => {
-      if (s.grades) {
-        s.grades.forEach(g => {
-          const parsed = parseGradeInfo(g.title, s.stage);
-          if (parsed && !uniqueTests.has(parsed.title)) {
-            uniqueTests.add(parsed.title);
-            allTests.push(parsed.title);
-          }
-        });
-      }
+    studentsInClass[0].grades.forEach(g => {
+      const parsed = parseGradeInfo(g.title, studentsInClass[0].stage);
+      if (parsed) allTests.push(parsed.title);
     });
 
     let html = `<div style="margin-bottom: 12px; max-height: 200px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px; padding: 8px;">
@@ -492,67 +482,54 @@
       return true;
     });
 
-    // إذا تم اختيار اختبارات، نحتاج لترتيب الطلاب حسب الدرجة
-    if (selectedTests.length === 1) {
-      filtered.sort((a, b) => {
-        const gradeA = a.grades.find(g => parseGradeInfo(g.title, a.stage)?.title === selectedTests[0])?.score;
-        const gradeB = b.grades.find(g => parseGradeInfo(g.title, b.stage)?.title === selectedTests[0])?.score;
-        const numA = parseFloat(gradeA);
-        const numB = parseFloat(gradeB);
-        if (isNaN(numA) && isNaN(numB)) return 0;
-        if (isNaN(numA)) return 1;
-        if (isNaN(numB)) return -1;
-        return numB - numA;
-      });
+    // تجهيز البيانات للترتيب
+    let listData = filtered.map(student => {
+      let scoreForSort = -1; 
+      let displayGrade = "";
+      let selectedGradesRaw = [];
+      
+      if (selectedTests.length > 0) {
+        selectedTests.forEach(testName => {
+          const gradeRecord = student.grades.find(g => parseGradeInfo(g.title, student.stage)?.title === testName);
+          if (gradeRecord) {
+             const isNoGrade = (gradeRecord.score === "لا يوجد درجة" || gradeRecord.score === "" || gradeRecord.score === null || gradeRecord.score === undefined);
+             if (!isNoGrade) {
+                const num = parseFloat(gradeRecord.score);
+                if (!isNaN(num)) {
+                    selectedGradesRaw.push(num);
+                }
+             }
+          }
+        });
+        if (selectedGradesRaw.length > 0) {
+            scoreForSort = selectedGradesRaw.reduce((a,b)=>a+b, 0) / selectedGradesRaw.length; // متوسط الدرجات المختارة
+        }
+      }
+      return { student, scoreForSort };
+    });
+
+    // ترتيب تنازلي
+    if (selectedTests.length > 0) {
+        listData.sort((a, b) => b.scoreForSort - a.scoreForSort);
     }
 
     let html = `<div style="max-height: 55vh; overflow-y: auto; padding-right: 5px;">`;
     let count = 0;
 
-    filtered.forEach((student, index) => {
-      let customGradesHTML = "";
-      let hasSelectedGrades = false;
-      let totalObtained = 0;
-      let totalMax = 0;
-      let testsCount = 0;
-      let displayScore = "";
-      let arrowIcon = "";
-
+    listData.forEach((item) => {
+      const student = item.student;
+      
+      // التحقق من وجود درجات للاختبارات المختارة
       if (selectedTests.length > 0) {
-        selectedTests.forEach(testName => {
-          const gradeRecord = student.grades.find(g => parseGradeInfo(g.title, student.stage)?.title === testName);
-          if (gradeRecord) {
-            const isNoGrade = (gradeRecord.score === "لا يوجد درجة" || gradeRecord.score === "" || gradeRecord.score === null || gradeRecord.score === undefined);
-            if (!isNoGrade) {
-              hasSelectedGrades = true;
-              const numScore = parseFloat(gradeRecord.score);
-              const maxScore = parseGradeInfo(gradeRecord.title, student.stage).maxScore;
-              
-              if (!isNaN(numScore)) {
-                totalObtained += numScore;
-                totalMax += maxScore;
-                testsCount++;
-                const pct = Math.round((numScore / maxScore) * 100);
-                const emoji = pct >= 85 ? '🌟' : pct >= 65 ? '👍' : '⚠️';
-                customGradesHTML += `• ${testName}: *${toArabicDigits(numScore)} / ${toArabicDigits(maxScore)}* (${toArabicDigits(pct)}٪) ${emoji}\n`;
-                if (selectedTests.length === 1) displayScore = `${toArabicDigits(numScore)} / ${toArabicDigits(maxScore)}`;
-              } else {
-                // إذا كانت الدرجة نصية مثل "ضعيف" أو "غائب"
-                customGradesHTML += `• ${testName}: ${escapeHtml(gradeRecord.score)}\n`;
-                if (selectedTests.length === 1) displayScore = escapeHtml(gradeRecord.score);
-              }
-            } else {
-              customGradesHTML += `• ${testName}: لا يوجد درجة ❌\n`;
-              if (selectedTests.length === 1) displayScore = "غائب";
-            }
-          }
-        });
-        
-        if (!hasSelectedGrades && selectedTests.length === 1) return; 
-
-        // إضافة سهم الترتيب
-        if (selectedTests.length === 1 && index === 0) arrowIcon = '<span class="arrow-up">▲</span>';
-        else if (selectedTests.length === 1 && index === filtered.length - 1) arrowIcon = '<span class="arrow-down">▼</span>';
+         let hasAnyGrade = false;
+         selectedTests.forEach(tn => {
+             const gr = student.grades.find(g => parseGradeInfo(g.title, student.stage)?.title === tn);
+             if (gr) {
+                 const isNo = (gr.score === "لا يوجد درجة" || gr.score === "" || gr.score === null || gr.score === undefined);
+                 if (!isNo) hasAnyGrade = true;
+             }
+         });
+         if (!hasAnyGrade) return;
       }
 
       count++;
@@ -566,6 +543,9 @@
       currentStudent = student;
 
       let msgText = "";
+      let customGradesHTML = "";
+      let totalObtained = 0, totalMax = 0, tCount = 0;
+
       if (selectedTests.length > 0) {
         msgText = `*📋 تقرير المتابعة*\n🏫 *منصة أ. محمد شحاتة*\n━━━━━━━━━━━━━━━━━━\n\n`;
         msgText += `👤 *الاسم:* ${student.name}\n📚 *المرحلة:* ${student.stage}\n👥 *المجموعة:* ${student.group || 'غير محددة'}\n`;
@@ -574,11 +554,35 @@
           msgText += `${isNegative ? "🔴" : "🟢"} *حالة الطالب:* ${student.status}\n`;
         }
         msgText += `\n━━━━━━━━━━━━━━━━━━\n\n📊 *الدرجات المختارة:*\n\n`;
-        msgText += customGradesHTML;
         
+        selectedTests.forEach(testName => {
+          const gradeRecord = student.grades.find(g => parseGradeInfo(g.title, student.stage)?.title === testName);
+          if (gradeRecord) {
+            const isNoGrade = (gradeRecord.score === "لا يوجد درجة" || gradeRecord.score === "" || gradeRecord.score === null || gradeRecord.score === undefined);
+            if (!isNoGrade) {
+              const numScore = parseFloat(gradeRecord.score);
+              const maxScore = parseGradeInfo(gradeRecord.title, student.stage).maxScore;
+              if (!isNaN(numScore)) {
+                totalObtained += numScore;
+                totalMax += maxScore;
+                tCount++;
+                const pct = Math.round((numScore / maxScore) * 100);
+                const emoji = pct >= 85 ? '🌟' : pct >= 65 ? '👍' : '⚠️';
+                customGradesHTML += `• ${testName}: *${toArabicDigits(numScore)} / ${toArabicDigits(maxScore)}* (${toArabicDigits(pct)}٪) ${emoji}\n`;
+              } else {
+                // سطر جديد للتعامل مع النصوص (مثل "ضعيف")
+                customGradesHTML += `• ${testName}: *${gradeRecord.score}*\n`;
+              }
+            } else {
+              customGradesHTML += `• ${testName}: لا يوجد درجة ❌\n`;
+            }
+          }
+        });
+        
+        msgText += customGradesHTML;
         if (totalMax > 0) {
           const percentage = Math.round((totalObtained / totalMax) * 100);
-          msgText += `\n📈 *الملخص:*\n├ المجموع: *${toArabicDigits(totalObtained)} / ${toArabicDigits(totalMax)}*\n├ النسبة: *${toArabicDigits(percentage)}٪*\n└ الاختبارات المؤداة: *${toArabicDigits(testsCount)}*\n`;
+          msgText += `\n📈 *الملخص:*\n├ المجموع: *${toArabicDigits(totalObtained)} / ${toArabicDigits(totalMax)}*\n├ النسبة: *${toArabicDigits(percentage)}٪*\n└ الاختبارات المؤداة: *${toArabicDigits(tCount)}*\n`;
         }
         msgText += `\n━━━━━━━━━━━━━━━━━━\n📌 *لمتابعة الحضور والغياب:*\n🔗 https://alameed.center/\n\n✍️ _مع تحيات أ. محمد شحاتة_\n_مدرس الشرعية_`;
       } else {
@@ -590,11 +594,41 @@
       const encodedMsg = encodeURIComponent(msgText);
       const waLink = hasPhone ? `https://wa.me/${targetPhone}?text=${encodedMsg}` : "#";
 
+      let displayScoreInfo = "";
+      let arrowHTML = "";
+      
+      // 👈 هنا نعرض الدرجة والسهم في البطاقة
+      if (selectedTests.length > 0 && item.scoreForSort >= 0) {
+         // عرض متوسط الدرجات أو الدرجة المفردة
+         if (selectedTests.length === 1) {
+             const gr = student.grades.find(g => parseGradeInfo(g.title, student.stage)?.title === selectedTests[0]);
+             if (gr) {
+                 const num = parseFloat(gr.score);
+                 if (!isNaN(num)) displayScoreInfo = `الدرجة: ${toArabicDigits(num)}`;
+                 else displayScoreInfo = `الدرجة: ${gr.score}`;
+             }
+         } else {
+             displayScoreInfo = `المتوسط: ${toArabicDigits(item.scoreForSort.toFixed(1))}`;
+         }
+         
+         // تحديد السهم
+         const idx = count - 1;
+         if (idx > 0) {
+             const prevScore = listData[idx-1].scoreForSort;
+             if (item.scoreForSort > prevScore) arrowHTML = `<span style="color: #38a169; font-weight: bold; font-size: 18px; margin-left: 5px;">▲</span>`;
+             else if (item.scoreForSort < prevScore) arrowHTML = `<span style="color: #e53e3e; font-weight: bold; font-size: 18px; margin-left: 5px;">▼</span>`;
+             else arrowHTML = `<span style="color: #718096; font-weight: bold; font-size: 18px; margin-left: 5px;">=</span>`;
+         }
+      }
+
       html += `
         <div class="bulk-item">
           <div style="flex: 1;">
-            <div style="font-weight: bold; font-size: 14px; color: var(--text-color);">${count}. ${escapeHtml(student.name)} ${displayScore ? `(${displayScore})` : ''} ${arrowIcon}</div>
-            <div style="font-size: 11px; color: var(--muted-color);">📱 ${phone || 'غير مسجل'}</div>
+            <div style="font-weight: bold; font-size: 14px; color: var(--text-color); display: flex; align-items: center;">
+              <span>${count}. ${escapeHtml(student.name)}</span>
+              ${arrowHTML}
+            </div>
+            <div style="font-size: 11px; color: var(--muted-color); margin-top: 4px;">📱 ${phone || 'غير مسجل'} ${displayScoreInfo ? '| ' + displayScoreInfo : ''}</div>
           </div>
           <div class="bulk-btns">
             ${hasPhone ? `<a href="${waLink}" target="_blank" class="bulk-btn-send">إرسال</a>` : `<button class="bulk-btn-send" disabled>لا يوجد رقم</button>`}
@@ -650,7 +684,7 @@
               const emoji = pct >= 85 ? '🌟' : pct >= 65 ? '👍' : '⚠️';
               gradesList.push(`• ${parsed.title}: *${toArabicDigits(numScore)} / ${toArabicDigits(parsed.maxScore)}* (${toArabicDigits(pct)}٪) ${emoji}`);
             } else { 
-              gradesList.push(`• ${parsed.title}: ${g.score}`); 
+              gradesList.push(`• ${parsed.title}: *${g.score}*`); 
             }
           }
         }
@@ -718,29 +752,25 @@
   }
 
   // ============================================================
-  // 📊 تقرير الامتحان
+  // 📊 دوال تقرير الامتحان
   // ============================================================
 
   function showExamReportModal() {
-    const stages = [...new Set(studentsData.map(s => (s.stage || '').trim()).filter(Boolean))].sort();
-    
     let html = `<div style="margin-bottom: 12px;">
-      <label style="font-weight: bold; color: var(--primary-color);">📖 اختر المرحلة:</label>
-      <select id="examStageSelect" onchange="updateExamGroups()" style="margin-top: 5px; border: 2px solid var(--secondary-color);">
-        <option value="">كل المراحل</option>
-        ${stages.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('')}
+      <label style="font-weight: bold; color: var(--primary-color);">📖 المرحلة:</label>
+      <select id="examStageSelect" onchange="updateExamGroups()" style="margin-top: 5px; margin-bottom: 10px; border: 2px solid var(--secondary-color);">
+        <option value="">-- اختر المرحلة --</option>
+        ${[...new Set(studentsData.map(s => s.stage).filter(Boolean))].sort().map(st => `<option value="${escapeHtml(st)}">${escapeHtml(st)}</option>`).join('')}
       </select>
-    </div>
-    <div style="margin-bottom: 12px;">
-      <label style="font-weight: bold; color: var(--primary-color);">👥 اختر المجموعة:</label>
-      <select id="examGroupSelect" onchange="updateExamTests()" style="margin-top: 5px; border: 2px solid var(--secondary-color);">
-        <option value="">كل المجموعات</option>
+
+      <label style="font-weight: bold; color: var(--primary-color);">👥 المجموعة:</label>
+      <select id="examGroupSelect" onchange="updateExamTests()" style="margin-top: 5px; margin-bottom: 10px; border: 2px solid var(--secondary-color);">
+        <option value="">-- اختر المجموعة --</option>
       </select>
-    </div>
-    <div style="margin-bottom: 12px;">
-      <label style="font-weight: bold; color: var(--primary-color);">📝 اختر الامتحان:</label>
-      <select id="examSelect" style="margin-top: 5px; border: 2px solid var(--secondary-color);">
-        <option value="">اختر الامتحان</option>
+
+      <label style="font-weight: bold; color: var(--primary-color);">📝 الامتحان:</label>
+      <select id="examNameSelect" style="margin-top: 5px; margin-bottom: 10px; border: 2px solid var(--secondary-color);">
+        <option value="">-- اختر الامتحان --</option>
       </select>
     </div>
     <button onclick="generateExamReport()" style="background-color: #d69e2e; color: #fff;">عرض التقرير</button>`;
@@ -748,59 +778,56 @@
     document.getElementById("modal-title").innerText = `📊 تقرير امتحان`;
     document.getElementById("modal-body").innerHTML = html;
     document.getElementById("modal-overlay").classList.add("visible");
-
-    updateExamGroups();
   }
 
   function updateExamGroups() {
-    const stageVal = document.getElementById("examStageSelect").value;
-    let filtered = studentsData;
-    if (stageVal) filtered = filtered.filter(s => s.stage === stageVal);
-    
-    const groups = [...new Set(filtered.map(s => s.group).filter(Boolean))].sort();
+    const stage = document.getElementById("examStageSelect").value;
     const groupSelect = document.getElementById("examGroupSelect");
-    groupSelect.innerHTML = '<option value="">كل المجموعات</option>' + groups.map(g => `<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`).join('');
+    const examSelect = document.getElementById("examNameSelect");
     
-    updateExamTests();
+    groupSelect.innerHTML = '<option value="">-- اختر المجموعة --</option>';
+    examSelect.innerHTML = '<option value="">-- اختر الامتحان --</option>';
+
+    if (!stage) return;
+
+    const groups = [...new Set(studentsData.filter(s => s.stage === stage).map(s => s.group).filter(Boolean))].sort();
+    groupSelect.innerHTML += groups.map(g => `<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`).join('');
   }
 
   function updateExamTests() {
-    const stageVal = document.getElementById("examStageSelect").value;
-    const groupVal = document.getElementById("examGroupSelect").value;
-    let filtered = studentsData;
-    if (stageVal) filtered = filtered.filter(s => s.stage === stageVal);
-    if (groupVal) filtered = filtered.filter(s => s.group === groupVal);
+    const stage = document.getElementById("examStageSelect").value;
+    const group = document.getElementById("examGroupSelect").value;
+    const examSelect = document.getElementById("examNameSelect");
     
-    const uniqueTests = new Set();
-    filtered.forEach(s => {
+    examSelect.innerHTML = '<option value="">-- اختر الامتحان --</option>';
+
+    if (!stage || !group) return;
+
+    const studentsInGroup = studentsData.filter(s => s.stage === stage && s.group === group);
+    const allTests = new Set();
+
+    studentsInGroup.forEach(s => {
       if (s.grades) {
         s.grades.forEach(g => {
           const parsed = parseGradeInfo(g.title, s.stage);
-          if (parsed) uniqueTests.add(parsed.title);
+          if (parsed) allTests.add(parsed.title);
         });
       }
     });
 
-    const allTests = [...uniqueTests].sort();
-    const examSelect = document.getElementById("examSelect");
-    examSelect.innerHTML = '<option value="">اختر الامتحان</option>' + allTests.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
+    examSelect.innerHTML += [...allTests].sort().map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
   }
 
   function generateExamReport() {
-    const stageVal = document.getElementById("examStageSelect").value;
-    const groupVal = document.getElementById("examGroupSelect").value;
-    const examName = document.getElementById("examSelect").value;
+    const stage = document.getElementById("examStageSelect").value;
+    const group = document.getElementById("examGroupSelect").value;
+    const examName = document.getElementById("examNameSelect").value;
 
-    if (!examName) { alert("يرجى اختيار امتحان أولاً."); return; }
+    if (!stage || !group || !examName) { alert("يرجى اختيار المرحلة والمجموعة والامتحان أولاً."); return; }
 
     closeModal();
-    
-    let filteredStudents = studentsData.filter(s => {
-      if (stageVal && s.stage !== stageVal) return false;
-      if (groupVal && s.group !== groupVal) return false;
-      return true;
-    });
 
+    let filteredStudents = studentsData.filter(s => s.stage === stage && s.group === group);
     let scores = [];
     let absentStudents = [];
     
@@ -816,8 +843,7 @@
             const maxScore = parseGradeInfo(gradeRecord.title, student.stage).maxScore;
             scores.push({ student, score: numScore, maxScore });
           } else {
-            // نص مثل "ضعيف" أو "غائب" يعتبر غياب أو غير محسوب
-            absentStudents.push(student);
+             absentStudents.push(student);
           }
         }
       } else {
@@ -840,7 +866,7 @@
       else poor++;
     });
 
-    currentExamReportData = { examName, scores, absentStudents, highest, lowest, average, excellent, good, poor };
+    currentExamReportData = { examName, scores, absentStudents, highest, lowest, average, excellent, good, poor, stage, group };
 
     renderExamReportUI();
   }
@@ -849,7 +875,7 @@
     const data = currentExamReportData;
     if (!data) return;
 
-    const { examName, scores, absentStudents, highest, lowest, average, excellent, good, poor } = data;
+    const { examName, scores, absentStudents, highest, lowest, average, excellent, good, poor, stage, group } = data;
 
     let studentsHTML = "";
     scores.forEach((item, index) => {
@@ -876,6 +902,7 @@
     document.getElementById("examReportContent").innerHTML = `
       <div class="report-card-header" style="text-align: center;">
         <h3>📊 تقرير امتحان: ${escapeHtml(examName)}</h3>
+        <div style="font-size: 14px; opacity: 0.9;">${escapeHtml(stage)} - ${escapeHtml(group)}</div>
       </div>
 
       <div class="exam-report-card">
