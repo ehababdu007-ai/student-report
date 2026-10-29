@@ -441,14 +441,21 @@
 
     if (studentsInClass.length === 0) { alert("لا يوجد طلاب في هذا التصنيف."); return; }
 
+    // 👈 تعديل ترتيب الامتحانات: الأحدث أولاً (عكس الترتيب)
     const allTests = [];
+    // نجمع الأعمدة، سيكون أول عمود هو الأقدم وآخر عمود هو الأحدث
+    const rawTests = [];
     studentsInClass[0].grades.forEach(g => {
       const parsed = parseGradeInfo(g.title, studentsInClass[0].stage);
-      if (parsed) allTests.push(parsed.title);
+      if (parsed) rawTests.push(parsed.title);
     });
+    // نعكس الترتيب ليظهر الأحدث في الأعلى
+    for (let i = rawTests.length - 1; i >= 0; i--) {
+        allTests.push(rawTests[i]);
+    }
 
     let html = `<div style="margin-bottom: 12px; max-height: 200px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px; padding: 8px;">
-      <label style="font-weight: bold; color: var(--primary-color); display: block; margin-bottom: 8px;">📝 اختر الاختبارات (يمكن اختيار أكثر من واحد):</label>
+      <label style="font-weight: bold; color: var(--primary-color); display: block; margin-bottom: 8px;">📝 اختر الاختبارات (الأحدث أولاً):</label>
       ${allTests.map((t, i) => `
         <div class="checkbox-item">
           <input type="checkbox" id="test_chk_${i}" value="${escapeHtml(t)}" onchange="renderBulkList()">
@@ -485,7 +492,6 @@
     // تجهيز البيانات للترتيب
     let listData = filtered.map(student => {
       let scoreForSort = -1; 
-      let displayGrade = "";
       let selectedGradesRaw = [];
       
       if (selectedTests.length > 0) {
@@ -502,7 +508,7 @@
           }
         });
         if (selectedGradesRaw.length > 0) {
-            scoreForSort = selectedGradesRaw.reduce((a,b)=>a+b, 0) / selectedGradesRaw.length; // متوسط الدرجات المختارة
+            scoreForSort = selectedGradesRaw.reduce((a,b)=>a+b, 0) / selectedGradesRaw.length; 
         }
       }
       return { student, scoreForSort };
@@ -519,7 +525,6 @@
     listData.forEach((item) => {
       const student = item.student;
       
-      // التحقق من وجود درجات للاختبارات المختارة
       if (selectedTests.length > 0) {
          let hasAnyGrade = false;
          selectedTests.forEach(tn => {
@@ -570,7 +575,6 @@
                 const emoji = pct >= 85 ? '🌟' : pct >= 65 ? '👍' : '⚠️';
                 customGradesHTML += `• ${testName}: *${toArabicDigits(numScore)} / ${toArabicDigits(maxScore)}* (${toArabicDigits(pct)}٪) ${emoji}\n`;
               } else {
-                // سطر جديد للتعامل مع النصوص (مثل "ضعيف")
                 customGradesHTML += `• ${testName}: *${gradeRecord.score}*\n`;
               }
             } else {
@@ -597,9 +601,7 @@
       let displayScoreInfo = "";
       let arrowHTML = "";
       
-      // 👈 هنا نعرض الدرجة والسهم في البطاقة
       if (selectedTests.length > 0 && item.scoreForSort >= 0) {
-         // عرض متوسط الدرجات أو الدرجة المفردة
          if (selectedTests.length === 1) {
              const gr = student.grades.find(g => parseGradeInfo(g.title, student.stage)?.title === selectedTests[0]);
              if (gr) {
@@ -611,7 +613,6 @@
              displayScoreInfo = `المتوسط: ${toArabicDigits(item.scoreForSort.toFixed(1))}`;
          }
          
-         // تحديد السهم
          const idx = count - 1;
          if (idx > 0) {
              const prevScore = listData[idx-1].scoreForSort;
@@ -671,7 +672,10 @@
     let gradesList = [];
 
     if (student.grades && Array.isArray(student.grades)) {
-      student.grades.forEach(g => {
+      // 👈 عكس الترتيب لعرض الأحدث أولاً
+      const reversedGrades = [...student.grades].reverse();
+      
+      reversedGrades.forEach(g => {
         const parsed = parseGradeInfo(g.title, student.stage);
         if (parsed) {
           const isNoGrade = (g.score === "لا يوجد درجة" || g.score === "" || g.score === null || g.score === undefined);
